@@ -167,6 +167,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   // カテゴリ/地域で絞り込み中は、該当イベントを日付順の一覧で表示する
   const isFiltering = (!!activeCat || !!region) && !q;
   const filteredList = isFiltering ? dedupeByEvent(upcomingRaw, 200) : [];
+  // 「直近のイベント」欄に出すリスト：絞り込み中は結果、通常は近日開催。
+  const nearbyList = isFiltering ? filteredList : dedupeByEvent(upcomingRaw, 30);
   const byDay = new Map<string, Occ[]>();
   for (const occ of occurrences) {
     // 会期もの（複数日）は期間中の各日に乗せる。単日は開始日のみ。
@@ -254,6 +256,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
+        {/* 注目のイベント（検索バーの下）*/}
+        {!q && !isFiltering && highlight && (
+          <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />
+        )}
+
         {/* カテゴリピル（大分類） */}
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Pill href={hrefFor({ view, date: selected, cat: null, q, region })} active={!activeCat}>すべて</Pill>
@@ -300,21 +307,27 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         )}
 
-        {/* 絞り込み結果（カテゴリ/地域フィルタ時、カレンダーの上に日付順カルーセルで表示）*/}
-        {isFiltering && (
+        {/* 直近のイベント（カテゴリの下）。絞り込み中はこの欄が結果に切り替わる。*/}
+        {!q && (
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-lg font-bold text-on-surface">
-                絞り込み結果
-                <span className="ml-1 text-sm font-normal text-outline">（{filteredList.length}件・日付順）</span>
+                {isFiltering ? "絞り込み結果" : "直近のイベント"}
+                {isFiltering && <span className="ml-1 text-sm font-normal text-outline">（{nearbyList.length}件・日付順）</span>}
               </h3>
-              <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
+              {isFiltering ? (
+                <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
+              ) : (
+                <Link href="/explore" className="text-sm font-semibold text-primary hover:underline">もっと見る</Link>
+              )}
             </div>
-            {filteredList.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">この条件で開催予定のイベントはありません。</p>
+            {nearbyList.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">
+                {isFiltering ? "この条件で開催予定のイベントはありません。" : "予定されているイベントはまだありません。"}
+              </p>
             ) : (
               <Carousel>
-                {filteredList.map((occ) => (
+                {nearbyList.map((occ) => (
                   <CarouselCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
                 ))}
               </Carousel>
@@ -426,28 +439,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 </Link>
               </section>
             </div>
-
-            {/* 特集ハイライト */}
-            {highlight && <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />}
-
-            {/* 近日開催（絞り込み中は下の「絞り込み結果」に置き換わる） */}
-            {!isFiltering && (
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-on-surface">近日開催のイベント</h3>
-                  <Link href="/explore" className="text-sm font-semibold text-primary hover:underline">もっと見る</Link>
-                </div>
-                {upcoming.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">予定されているイベントはまだありません。</p>
-                ) : (
-                  <div className="space-y-3">
-                    {upcoming.map((occ) => (
-                      <UpcomingCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
           </>
         ) : (
           <DayList days={days} byDay={byDay} todayKey={todayKey} resolveColor={resolveColor} catById={catById} from={backHref} />
