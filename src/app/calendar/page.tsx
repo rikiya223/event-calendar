@@ -295,11 +295,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        {/* 注目のイベント（検索バーの下。絞り込んでも消さず視線を固定）*/}
-        {!q && highlight && (
-          <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />
-        )}
-
         {/* カテゴリピル（大分類・複数選択）。押すたびに足し引きされる。*/}
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Pill href={hrefFor({ view, date: selected, cat: null, q, region: regionParam })} active={activeCats.length === 0}>すべて</Pill>
@@ -478,6 +473,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </>
         ) : (
           <DayList days={days} byDay={byDay} todayKey={todayKey} resolveColor={resolveColor} catById={catById} from={backHref} />
+        )}
+
+        {/* 注目のイベント（カレンダーの下。テキスト検索中は出さない）*/}
+        {!q && highlight && (
+          <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />
         )}
 
       </div>
