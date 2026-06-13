@@ -302,71 +302,85 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        {/* カテゴリ（除外方式）。デフォルト全表示で、押すとそのカテゴリを隠す。
-            各ピル左＝表示/非表示トグル、右の▾＝中分類を開く（同時に1つだけ）。*/}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* すべて表示 ⇄ すべて非表示。全部隠してから見たいものだけ戻す使い方ができる。*/}
-          <Link
-            href={hrefFor({ view, date: selected, ex: allExcluded ? null : allLeafIds.join(","), q, region: regionParam, open: openId })}
-            scroll={false}
-            className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-              allExcluded
-                ? "bg-primary text-white shadow-sm hover:bg-primary/90"
-                : "bg-on-surface text-surface shadow-sm hover:bg-on-surface/90"
-            }`}
-          >
-            <Icon name={allExcluded ? "visibility" : "visibility_off"} className="text-[16px]" />
-            {allExcluded ? "すべて表示" : "すべて非表示"}
-          </Link>
-          {topCategories.map((c) => {
-            const state = topState(c);
-            const color = colorForKey(c.colorKey);
-            const isOpen = openId === c.id;
-            return (
-              <div key={c.id} className="inline-flex shrink-0 items-stretch overflow-hidden rounded-full">
-                <TopToggle
-                  href={hrefFor({ view, date: selected, ex: toggleTopEx(c), q, region: regionParam, open: openId })}
-                  state={state}
-                  color={color}
-                >
-                  {c.name}
-                </TopToggle>
-                <Link
-                  href={hrefFor({ view, date: selected, ex: exParam, q, region: regionParam, open: isOpen ? null : c.id })}
-                  scroll={false}
-                  aria-label={`${c.name}の中分類`}
-                  className={`grid w-7 place-items-center border-l transition ${
-                    state === "off"
-                      ? "border-black/5 bg-surface-variant/40 text-outline"
-                      : "border-black/5 text-slate-700"
-                  } ${isOpen ? "bg-black/[0.06]" : "hover:bg-black/[0.04]"}`}
-                  style={state === "off" ? undefined : { backgroundColor: `${color}26` }}
-                >
-                  <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 中分類（開いている大分類の分だけ・1段のみ。押すと表示/非表示）*/}
-        {openTop && (
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface-variant/30 px-4 py-2.5 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
-              <Icon name="subdirectory_arrow_right" className="text-[16px]" />{openTop.name}
+        {/* カテゴリ絞り込み（除外方式・チェックで表示/非表示）。
+            チェック付き＝表示、グレー＝非表示。▾で中分類を1段だけ開いて細かく調整。*/}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-2 px-0.5">
+            <span className="flex items-center gap-1 text-xs font-medium text-on-surface-variant">
+              <Icon name="tune" className="text-[15px]" />表示するカテゴリ
             </span>
-            {subCatsOf(openTop).map((sc) => (
-              <SubToggle
-                key={sc.id}
-                href={hrefFor({ view, date: selected, ex: toggleStr(ex, sc.id), q, region: regionParam, open: openId })}
-                off={exSet.has(sc.id)}
-                color={colorForKey(openTop.colorKey)}
-              >
-                {sc.name}
-              </SubToggle>
-            ))}
+            <Link
+              href={hrefFor({ view, date: selected, ex: allExcluded ? null : allLeafIds.join(","), q, region: regionParam, open: openId })}
+              scroll={false}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-variant/50 px-3 py-1 text-xs font-medium text-on-surface-variant transition hover:bg-surface-variant"
+            >
+              <Icon name={allExcluded ? "visibility" : "visibility_off"} className="text-[15px]" />
+              {allExcluded ? "すべて表示" : "すべて非表示"}
+            </Link>
           </div>
-        )}
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {topCategories.map((c) => {
+              const state = topState(c);
+              const color = colorForKey(c.colorKey);
+              const on = state !== "off";
+              const isOpen = openId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  className="inline-flex shrink-0 items-stretch overflow-hidden rounded-full border transition"
+                  style={{ borderColor: on ? `${color}59` : "transparent", backgroundColor: on ? "#fff" : undefined }}
+                >
+                  <Link
+                    href={hrefFor({ view, date: selected, ex: toggleTopEx(c), q, region: regionParam, open: openId })}
+                    scroll={false}
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-2.5 text-sm font-medium transition ${on ? "pr-2.5" : "pr-3.5"} ${
+                      on ? "text-on-surface hover:bg-black/[0.02]" : "bg-surface-variant/40 text-on-surface-variant hover:bg-surface-variant/60"
+                    }`}
+                  >
+                    <span className="inline-flex" style={on ? { color } : undefined}>
+                      <Icon
+                        name={state === "on" ? "check_circle" : state === "partial" ? "remove_circle" : "radio_button_unchecked"}
+                        className={`text-[18px] ${on ? "" : "text-outline"}`}
+                      />
+                    </span>
+                    {c.name}
+                    {state === "partial" && <span className="rounded bg-surface-variant/70 px-1 text-[10px] font-semibold text-on-surface-variant">一部</span>}
+                  </Link>
+                  {on && (
+                    <Link
+                      href={hrefFor({ view, date: selected, ex: exParam, q, region: regionParam, open: isOpen ? null : c.id })}
+                      scroll={false}
+                      aria-label={`${c.name}の中分類を${isOpen ? "閉じる" : "開く"}`}
+                      className={`grid w-7 place-items-center border-l text-on-surface-variant transition ${isOpen ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
+                      style={{ borderColor: `${color}33` }}
+                    >
+                      <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 中分類（開いている大分類の分だけ・1段のみ）*/}
+          {openTop && (
+            <div className="-mx-4 flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface-variant/30 px-4 py-2.5 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-on-surface-variant">
+                <Icon name="subdirectory_arrow_right" className="text-[16px]" />{openTop.name}
+              </span>
+              {subCatsOf(openTop).map((sc) => (
+                <SubToggle
+                  key={sc.id}
+                  href={hrefFor({ view, date: selected, ex: toggleStr(ex, sc.id), q, region: regionParam, open: openId })}
+                  off={exSet.has(sc.id)}
+                  color={colorForKey(openTop.colorKey)}
+                >
+                  {sc.name}
+                </SubToggle>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* 絞り込み中の一括解除（除外・地域・検索をすべてリセット）*/}
         {hasFilters && (
@@ -412,9 +426,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {/* ダッシュボード：カレンダー＋選択日リスト */}
             <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
               {/* カレンダーウィジェット */}
-              <section className="rounded-2xl border border-outline-variant/30 bg-white p-3 shadow-sm sm:p-4">
+              <section className="rounded-2xl border border-outline-variant/40 bg-white p-3 shadow-md sm:p-4">
                 <div className="mb-3 flex items-center justify-between px-1">
-                  <h2 className="text-xl font-bold text-on-surface">{anchor.y}年{anchor.m + 1}月</h2>
+                  <h2 className="text-xl font-bold text-on-surface sm:text-2xl">{anchor.y}年{anchor.m + 1}月</h2>
                   <div className="flex items-center gap-1">
                     <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, -1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="前の月"><Icon name="chevron_left" /></Link>
                     <Link href={hrefFor({ view, date: todayJst(), ex: exParam, q, region: regionParam, open: openId })} className="rounded-lg px-2 py-1 text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50">今日</Link>
@@ -440,26 +454,37 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       <Link
                         key={key}
                         href={`/calendar?${params.toString()}`}
-                        className={`relative flex h-14 flex-col gap-1 border-b border-r border-outline-variant/10 p-1.5 transition sm:h-[88px] ${
-                          isSelected ? "z-10 rounded-lg bg-primary-container/15 ring-2 ring-inset ring-primary" : "hover:bg-surface-variant/40"
+                        className={`relative flex h-16 flex-col gap-1 border-b border-r border-outline-variant/10 p-1.5 transition sm:h-[92px] ${
+                          isSelected
+                            ? "z-10 rounded-lg bg-primary-container/15 ring-2 ring-inset ring-primary"
+                            : list.length > 0 && inMonth
+                              ? "bg-primary/[0.035] hover:bg-primary/[0.06]"
+                              : "hover:bg-surface-variant/40"
                         } ${inMonth ? "" : "opacity-30"}`}
                       >
-                        {/* 今日＝塗りつぶしの円、選択日＝セルの枠で区別 */}
-                        <span
-                          className={`grid h-5 w-5 place-items-center rounded-full text-xs ${
-                            isToday
-                              ? "bg-primary font-bold text-white"
-                              : isSelected
-                                ? "font-bold text-primary"
-                                : p.weekday === 0
-                                  ? "text-rose-500"
-                                  : p.weekday === 6
-                                    ? "text-sky-500"
-                                    : "text-on-surface-variant"
-                          }`}
-                        >
-                          {p.d}
-                        </span>
+                        {/* 上段：日付（今日＝塗り円 / 選択日＝色文字）＋ その日のイベント数 */}
+                        <div className="flex items-start justify-between gap-1">
+                          <span
+                            className={`grid h-5 w-5 place-items-center rounded-full text-xs ${
+                              isToday
+                                ? "bg-primary font-bold text-white"
+                                : isSelected
+                                  ? "font-bold text-primary"
+                                  : p.weekday === 0
+                                    ? "text-rose-500"
+                                    : p.weekday === 6
+                                      ? "text-sky-500"
+                                      : "text-on-surface-variant"
+                            }`}
+                          >
+                            {p.d}
+                          </span>
+                          {list.length > 0 && (
+                            <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary/12 px-1 text-[10px] font-bold leading-none text-primary">
+                              {list.length}
+                            </span>
+                          )}
+                        </div>
                         {list.length > 0 && (
                           <>
                             {/* モバイル：色ドット */}
@@ -490,24 +515,26 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 </div>
               </section>
 
-              {/* 選択日のイベント */}
-              <section className="flex flex-col rounded-2xl border border-outline-variant/30 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-on-surface">{selected.m + 1}月{selected.d}日のイベント</h3>
-                  <span className="text-sm text-outline">{selectedEvents.length}件</span>
+              {/* 選択日のイベント。PCではカレンダーと同じ高さに収め、件数が多い分は内部スクロール。*/}
+              <section className="relative rounded-2xl border border-outline-variant/30 bg-white shadow-sm">
+                <div className="flex max-h-[460px] flex-col p-4 lg:absolute lg:inset-0 lg:max-h-none">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-on-surface">{selected.m + 1}月{selected.d}日のイベント</h3>
+                    <span className="shrink-0 rounded-full bg-surface-variant/50 px-2 py-0.5 text-xs font-semibold text-on-surface-variant">{selectedEvents.length}件</span>
+                  </div>
+                  <div className="custom-scroll -mr-1.5 flex-1 space-y-3 overflow-y-auto pr-1.5">
+                    {selectedEvents.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-outline-variant/40 px-3 py-10 text-center text-sm text-outline">この日のイベントはありません</p>
+                    ) : (
+                      selectedEvents.map((occ) => (
+                        <DayPanelCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} dayKey={selectedKey} />
+                      ))
+                    )}
+                  </div>
+                  <Link href="/submit" className="mt-3 flex shrink-0 items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15">
+                    <Icon name="add" className="text-[18px]" /> イベントを投稿
+                  </Link>
                 </div>
-                <div className="custom-scroll flex-1 space-y-3 overflow-y-auto">
-                  {selectedEvents.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-outline-variant/40 px-3 py-10 text-center text-sm text-outline">この日のイベントはありません</p>
-                  ) : (
-                    selectedEvents.map((occ) => (
-                      <DayPanelCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} dayKey={selectedKey} />
-                    ))
-                  )}
-                </div>
-                <Link href="/submit" className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15">
-                  <Icon name="add" className="text-[18px]" /> イベントを投稿
-                </Link>
               </section>
             </div>
           </>
@@ -525,43 +552,22 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   );
 }
 
-// 大分類の表示/非表示トグル（除外方式）。on=色付き / partial=薄い色＋「一部」/ off=グレー＋打ち消し線。
-function TopToggle({ href, state, color, children }: { href: string; state: "on" | "off" | "partial"; color: string; children: React.ReactNode }) {
-  const base = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap py-1.5 pl-3.5 pr-3 text-sm font-medium transition";
-  if (state === "off") {
-    return (
-      <Link href={href} scroll={false} className={`${base} bg-surface-variant/40 text-outline line-through hover:bg-surface-variant/60`}>
-        <span className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-current" />
-        {children}
-      </Link>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      className={`${base} text-slate-800 hover:brightness-[0.97]`}
-      style={{ backgroundColor: state === "partial" ? `${color}26` : `${color}59` }}
-    >
-      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-      {children}
-      {state === "partial" && <span className="rounded bg-white/70 px-1 text-[10px] font-semibold text-slate-500">一部</span>}
-    </Link>
-  );
-}
-
-// 中分類の表示/非表示トグル。off＝グレー＋打ち消し線、on＝色付き。
+// 中分類の表示/非表示トグル（チェック方式）。off＝グレーの空きマル、on＝色付きチェック。
 function SubToggle({ href, off, color, children }: { href: string; off: boolean; color: string; children: React.ReactNode }) {
-  const base = "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition";
+  const base = "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border py-1 pl-2 pr-2.5 text-sm font-medium transition";
   if (off) {
     return (
-      <Link href={href} scroll={false} className={`${base} bg-white/60 font-medium text-outline line-through hover:bg-white`}>
+      <Link href={href} scroll={false} className={`${base} border-transparent bg-white/50 text-on-surface-variant hover:bg-white`}>
+        <Icon name="radio_button_unchecked" className="text-[16px] text-outline" />
         {children}
       </Link>
     );
   }
   return (
-    <Link href={href} scroll={false} className={`${base} font-medium text-slate-800 hover:brightness-[0.97]`} style={{ backgroundColor: `${color}40` }}>
+    <Link href={href} scroll={false} className={`${base} bg-white text-on-surface hover:bg-black/[0.02]`} style={{ borderColor: `${color}59` }}>
+      <span className="inline-flex" style={{ color }}>
+        <Icon name="check_circle" className="text-[16px]" />
+      </span>
       {children}
     </Link>
   );
