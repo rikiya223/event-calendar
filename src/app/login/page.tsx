@@ -21,7 +21,7 @@ export default async function LoginPage({
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-16">
       <h1 className="mb-2 text-center text-2xl font-bold text-slate-800">ようこそ</h1>
       <p className="mb-8 text-center text-sm text-slate-500">
-        ログインするとブックマークや投稿が使えます
+        ログインすると「気になる」や投稿が使えます
       </p>
       <LoginForm next={next} />
     </main>

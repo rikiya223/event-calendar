@@ -32,7 +32,7 @@ export function BookmarkButton({
       }
       if (res.ok) {
         setBookmarked(res.bookmarked);
-        setToast(res.bookmarked ? "保存しました" : "保存を解除しました");
+        setToast(res.bookmarked ? "「気になる」に追加しました" : "「気になる」を解除しました");
       }
     });
   }
@@ -50,7 +50,7 @@ export function BookmarkButton({
             : "border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-low"
         }`}
       >
-        {bookmarked ? "★ ブックマーク済み" : "☆ ブックマーク"}
+        {bookmarked ? "★ 気になる" : "☆ 気になる"}
       </button>
 
       {toast && (

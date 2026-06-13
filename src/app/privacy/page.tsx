@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         <Section title="1. 取得する情報">
           <ul className="ml-4 list-disc space-y-1">
             <li>アカウント情報：メールアドレス（認証のために利用）</li>
-            <li>利用者が作成したデータ：ブックマーク、投稿したイベント情報</li>
+            <li>利用者が作成したデータ：「気になる」に登録したイベント、投稿したイベント情報</li>
             <li>ログイン状態を保持するための Cookie・セッション情報</li>
             <li>アクセスログ等の技術情報（不具合対応・改善のため）</li>
           </ul>
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
         <Section title="2. 利用目的">
           <ul className="ml-4 list-disc space-y-1">
             <li>本サービスの提供・本人確認・ログイン状態の維持</li>
-            <li>ブックマーク等のパーソナライズ機能の提供</li>
+            <li>「気になる」等のパーソナライズ機能の提供</li>
             <li>投稿内容の審査・掲載</li>
             <li>不正利用の防止、品質改善、お問い合わせ対応</li>
           </ul>

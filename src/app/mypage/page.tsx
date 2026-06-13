@@ -60,11 +60,11 @@ export default async function MyPage() {
 
       <section>
         <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          ブックマーク <span className="text-sm font-normal text-slate-400">（{bookmarks.length}件）</span>
+          気になる <span className="text-sm font-normal text-slate-400">（{bookmarks.length}件）</span>
         </h2>
         {bookmarks.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">
-            まだブックマークがありません。
+            まだ「気になる」に登録したイベントがありません。
             <Link href="/calendar" className="ml-1 text-primary hover:underline">
               カレンダーから探す
             </Link>
