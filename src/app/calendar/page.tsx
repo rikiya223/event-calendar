@@ -78,19 +78,20 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const q = (sp.q ?? "").trim();
   const region = sp.region ?? null;
 
-  // イベントがある都道府県だけをフィルター候補に出す
-  const regionRows = await prisma.venue.findMany({
-    where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
-    distinct: ["region"],
-    select: { region: true },
-    orderBy: { region: "asc" },
-  });
+  // 都道府県候補とカテゴリは互いに独立なので並列取得（DB往復を1波にまとめる）
+  const [regionRows, allCategories] = await Promise.all([
+    prisma.venue.findMany({
+      where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
+      distinct: ["region"],
+      select: { region: true },
+      orderBy: { region: "asc" },
+    }),
+    prisma.category.findMany({
+      select: { id: true, name: true, icon: true, colorKey: true, parentId: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   const availableRegions = regionRows.map((r) => r.region!).filter(Boolean);
-
-  const allCategories = await prisma.category.findMany({
-    select: { id: true, name: true, icon: true, colorKey: true, parentId: true },
-    orderBy: { name: "asc" },
-  });
   const catById = new Map(allCategories.map((c) => [c.id, c]));
   const topCategories = allCategories
     .filter((c) => c.parentId === null)
@@ -114,23 +115,26 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   // 検索／近日開催（今日以降）。終端は十分先の日付（Prismaが扱える範囲）。
   const farFuture = new Date("2100-01-01T00:00:00Z");
-  const searchResults = q ? await loadOccurrences({ start: fromToday, end: farFuture, catScopeIds, q, region }) : [];
-  const upcoming = await prisma.eventOccurrence.findMany({
-    where: {
-      startsAt: { gte: fromToday },
-      event: {
-        status: "PUBLISHED",
-        ...(catScopeIds ? { eventCategories: { some: { categoryId: { in: catScopeIds } } } } : {}),
-        ...(region ? { venue: { region } } : {}),
-      },
-    },
-    orderBy: { startsAt: "asc" },
-    take: 6,
-    include: occInclude,
-  });
-
   const { start, end, days } = buildRange(view, anchor);
-  const occurrences = q ? [] : await loadOccurrences({ start, end, catScopeIds, q, region });
+
+  // 検索・近日開催・表示範囲の取得は互いに独立なので並列実行（直列の往復を1波に）
+  const [searchResults, upcoming, occurrences] = await Promise.all([
+    q ? loadOccurrences({ start: fromToday, end: farFuture, catScopeIds, q, region }) : Promise.resolve([] as Occ[]),
+    prisma.eventOccurrence.findMany({
+      where: {
+        startsAt: { gte: fromToday },
+        event: {
+          status: "PUBLISHED",
+          ...(catScopeIds ? { eventCategories: { some: { categoryId: { in: catScopeIds } } } } : {}),
+          ...(region ? { venue: { region } } : {}),
+        },
+      },
+      orderBy: { startsAt: "asc" },
+      take: 6,
+      include: occInclude,
+    }),
+    q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, catScopeIds, q, region }),
+  ]);
   const byDay = new Map<string, Occ[]>();
   for (const occ of occurrences) {
     // 会期もの（複数日）は期間中の各日に乗せる。単日は開始日のみ。
