@@ -257,7 +257,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         </div>
 
         {/* クイック期間フィルタ */}
-        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
             <Icon name="bolt" className="text-[16px]" />期間
           </span>
@@ -267,7 +267,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         </div>
 
         {/* カテゴリピル（大分類） */}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Pill href={hrefFor({ view, date: selected, cat: null, q, region })} active={!activeCat}>すべて</Pill>
           {topCategories.map((c) => {
             const isActive = activeTopId === c.id;
@@ -283,7 +283,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
         {/* 中分類ピル（大分類を選ぶと出る：さらに絞り込み） */}
         {activeTop && subCategories.length > 0 && (
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
               <Icon name="subdirectory_arrow_right" className="text-[16px]" />{activeTop.name}
             </span>
@@ -303,7 +303,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
         {/* 地域フィルター（イベントのある都道府県のみ） */}
         {availableRegions.length > 0 && (
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
               <Icon name="location_on" className="text-[16px]" />地域
             </span>
@@ -461,13 +461,23 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 }
 
 function Pill({ href, active, color, children }: { href: string; active: boolean; color?: string; children: React.ReactNode }) {
+  // 色付き（カテゴリ）はその色で塗る。色なし（期間・地域・すべて）はグレー/濃色。枠線は使わない。
+  const base = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition";
+  if (color) {
+    return (
+      <Link
+        href={href}
+        className={`${base} text-slate-800 ${active ? "font-semibold shadow-sm ring-1 ring-black/10" : "font-medium hover:brightness-[0.97]"}`}
+        style={{ backgroundColor: active ? color : `${color}26` }}
+      >
+        {children}
+      </Link>
+    );
+  }
   return (
     <Link
       href={href}
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm shadow-sm transition ${
-        active ? "border-on-surface font-medium text-on-surface" : "border-outline-variant/40 bg-white text-on-surface-variant hover:bg-surface-variant/40"
-      }`}
-      style={active && color ? { backgroundColor: `${color}40` } : undefined}
+      className={`${base} ${active ? "bg-on-surface font-semibold text-surface shadow-sm" : "bg-surface-variant/50 font-medium text-on-surface-variant hover:bg-surface-variant"}`}
     >
       {children}
     </Link>
