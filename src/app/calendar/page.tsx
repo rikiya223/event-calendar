@@ -256,8 +256,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        {/* 注目のイベント（検索バーの下）*/}
-        {!q && !isFiltering && highlight && (
+        {/* 注目のイベント（検索バーの下。絞り込んでも消さず視線を固定）*/}
+        {!q && highlight && (
           <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />
         )}
 
@@ -312,12 +312,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-lg font-bold text-on-surface">
-                {isFiltering ? "絞り込み結果" : "直近のイベント"}
-                {isFiltering && <span className="ml-1 text-sm font-normal text-outline">（{nearbyList.length}件・日付順）</span>}
+                直近のイベント
+                {isFiltering && <span className="ml-1.5 text-sm font-normal text-outline">{nearbyList.length}件</span>}
               </h3>
-              {isFiltering ? (
-                <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
-              ) : (
+              {!isFiltering && (
                 <Link href="/explore" className="text-sm font-semibold text-primary hover:underline">もっと見る</Link>
               )}
             </div>
@@ -425,7 +423,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                   <h3 className="text-lg font-bold text-on-surface">{selected.m + 1}月{selected.d}日のイベント</h3>
                   <span className="text-sm text-outline">{selectedEvents.length}件</span>
                 </div>
-                <div className="custom-scroll flex-1 space-y-3 overflow-y-auto lg:max-h-[360px]">
+                <div className="custom-scroll flex-1 space-y-3 overflow-y-auto">
                   {selectedEvents.length === 0 ? (
                     <p className="rounded-xl border border-dashed border-outline-variant/40 px-3 py-10 text-center text-sm text-outline">この日のイベントはありません</p>
                   ) : (
@@ -434,8 +432,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                     ))
                   )}
                 </div>
-                <Link href="/submit" className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-bold text-white transition hover:opacity-90">
-                  <Icon name="add" className="text-[20px]" /> イベントを投稿
+                <Link href="/submit" className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15">
+                  <Icon name="add" className="text-[18px]" /> イベントを投稿
                 </Link>
               </section>
             </div>
