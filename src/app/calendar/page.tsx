@@ -227,25 +227,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   return (
     <main className="px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
-        {/* ヒーロー（初期表示の第一印象。絞り込み・検索中は出さない）*/}
-        {!hasFilters && (
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-container px-6 py-8 text-white shadow-lg shadow-primary/20 sm:px-9 sm:py-10">
-            <div className="relative z-10 max-w-xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-                {today.y}.{String(today.m + 1).padStart(2, "0")}.{String(today.d).padStart(2, "0")}（{WEEKDAY_LABELS[jstParts(jstMidnightUtc(today.y, today.m, today.d)).weekday]}）
-              </p>
-              <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight sm:text-[28px]">
-                気になるイベントを、<br className="sm:hidden" />カレンダーで見つけよう。
-              </h1>
-              <p className="mt-2.5 text-sm leading-relaxed text-white/85">
-                スポーツ・音楽・アート・映画・ゲーム・祭り…<br className="hidden sm:block" />日本中のイベントを、ひとつのカレンダーで。
-              </p>
-            </div>
-            <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/10" />
-            <div className="pointer-events-none absolute -bottom-16 right-24 h-36 w-36 rounded-full bg-white/[0.07]" />
-          </section>
-        )}
-
         {/* ツールバー：検索＋ビュー */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <form action="/calendar" method="get" className="relative w-full sm:max-w-md">
