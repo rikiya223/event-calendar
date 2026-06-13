@@ -175,13 +175,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         },
       },
       orderBy: { startsAt: "asc" },
-      take: 40,
+      take: 300,
       include: occInclude,
     }),
     q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, catScopeIds, q, region }),
   ]);
   // 近日開催はイベント単位で重複排除（大相撲など多数の開催回を1件に）
   const upcoming = dedupeByEvent(upcomingRaw, 6);
+  // カテゴリ/地域で絞り込み中は、該当イベントを日付順の一覧で表示する
+  const isFiltering = (!!activeCat || !!region) && !q;
+  const filteredList = isFiltering ? dedupeByEvent(upcomingRaw, 200) : [];
   const byDay = new Map<string, Occ[]>();
   for (const occ of occurrences) {
     // 会期もの（複数日）は期間中の各日に乗せる。単日は開始日のみ。
@@ -435,25 +438,49 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {/* 特集ハイライト */}
             {highlight && <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />}
 
-            {/* 近日開催 */}
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-on-surface">近日開催のイベント</h3>
-                <Link href="/explore" className="text-sm font-semibold text-primary hover:underline">もっと見る</Link>
-              </div>
-              {upcoming.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">予定されているイベントはまだありません。</p>
-              ) : (
-                <div className="space-y-3">
-                  {upcoming.map((occ) => (
-                    <UpcomingCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
-                  ))}
+            {/* 近日開催（絞り込み中は下の「絞り込み結果」に置き換わる） */}
+            {!isFiltering && (
+              <section>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-on-surface">近日開催のイベント</h3>
+                  <Link href="/explore" className="text-sm font-semibold text-primary hover:underline">もっと見る</Link>
                 </div>
-              )}
-            </section>
+                {upcoming.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">予定されているイベントはまだありません。</p>
+                ) : (
+                  <div className="space-y-3">
+                    {upcoming.map((occ) => (
+                      <UpcomingCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </>
         ) : (
           <DayList days={days} byDay={byDay} todayKey={todayKey} resolveColor={resolveColor} catById={catById} from={backHref} />
+        )}
+
+        {/* 絞り込み結果（カテゴリ/地域フィルタ時、該当イベントを日付順に一覧表示）*/}
+        {isFiltering && (
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-on-surface">
+                絞り込み結果
+                <span className="ml-1 text-sm font-normal text-outline">（{filteredList.length}件・日付順）</span>
+              </h3>
+              <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
+            </div>
+            {filteredList.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">この条件で開催予定のイベントはありません。</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredList.map((occ) => (
+                  <UpcomingCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
+                ))}
+              </div>
+            )}
+          </section>
         )}
       </div>
     </main>
