@@ -170,6 +170,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       .filter((c): c is NonNullable<typeof c> => !!c)
       .sort((a, b) => Number(usedCatIds.has(b.id)) - Number(usedCatIds.has(a.id)) || a.name.localeCompare(b.name, "ja"));
   const openTop = openId ? topCategories.find((t) => t.id === openId) ?? null : null;
+  // 全表示⇄全非表示トグル用：全中分類idと「全部除外済みか」
+  const allLeafIds = topCategories.flatMap((t) => t.childIds);
+  const allExcluded = allLeafIds.length > 0 && allLeafIds.every((id) => exSet.has(id));
 
   const today = todayJst();
   const fromToday = jstMidnightUtc(today.y, today.m, today.d);
@@ -302,6 +305,19 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         {/* カテゴリ（除外方式）。デフォルト全表示で、押すとそのカテゴリを隠す。
             各ピル左＝表示/非表示トグル、右の▾＝中分類を開く（同時に1つだけ）。*/}
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* すべて表示 ⇄ すべて非表示。全部隠してから見たいものだけ戻す使い方ができる。*/}
+          <Link
+            href={hrefFor({ view, date: selected, ex: allExcluded ? null : allLeafIds.join(","), q, region: regionParam, open: openId })}
+            scroll={false}
+            className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+              allExcluded
+                ? "bg-primary text-white shadow-sm hover:bg-primary/90"
+                : "bg-on-surface text-surface shadow-sm hover:bg-on-surface/90"
+            }`}
+          >
+            <Icon name={allExcluded ? "visibility" : "visibility_off"} className="text-[16px]" />
+            {allExcluded ? "すべて表示" : "すべて非表示"}
+          </Link>
           {topCategories.map((c) => {
             const state = topState(c);
             const color = colorForKey(c.colorKey);
