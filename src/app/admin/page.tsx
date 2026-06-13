@@ -33,9 +33,18 @@ function formatJst(d: Date) {
   }).format(d);
 }
 
-export default async function AdminPage() {
+const EVENTS_PER_PAGE = 50;
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string }>;
+}) {
   // 管理者以外は弾く（未ログイン→/login、非管理者→/）
   await requireAdmin();
+  const sp = await searchParams;
+  const eventQuery = (sp.q ?? "").trim();
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
   // 大分類（colorKey を持つ）とその子カテゴリを取得
   const topCategories = await prisma.category.findMany({
@@ -79,17 +88,33 @@ export default async function AdminPage() {
     include: { event: { select: { id: true, canonicalTitle: true } } },
   });
 
-  // 直近の登録イベント（開催回・会場・カテゴリを含む）
-  const events = await prisma.event.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    include: {
-      venue: true,
-      occurrences: { orderBy: { startsAt: "asc" }, take: 1 },
-      eventCategories: { include: { category: true } },
-      sources: { select: { sourceType: true, sourceUrl: true }, take: 1 },
-    },
-  });
+  // 登録イベント（検索＋ページング。タイトル部分一致で絞り込み）
+  const eventWhere = eventQuery
+    ? { canonicalTitle: { contains: eventQuery, mode: "insensitive" as const } }
+    : {};
+  const [events, totalEvents] = await Promise.all([
+    prisma.event.findMany({
+      where: eventWhere,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * EVENTS_PER_PAGE,
+      take: EVENTS_PER_PAGE,
+      include: {
+        venue: true,
+        occurrences: { orderBy: { startsAt: "asc" }, take: 1 },
+        eventCategories: { include: { category: true } },
+        sources: { select: { sourceType: true, sourceUrl: true }, take: 1 },
+      },
+    }),
+    prisma.event.count({ where: eventWhere }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(totalEvents / EVENTS_PER_PAGE));
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (eventQuery) params.set("q", eventQuery);
+    if (p > 1) params.set("page", String(p));
+    const s = params.toString();
+    return s ? `/admin?${s}` : "/admin";
+  };
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
@@ -261,12 +286,31 @@ export default async function AdminPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          登録済みイベント <span className="text-sm font-normal text-slate-400">（{events.length}件）</span>
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-800">
+            登録済みイベント <span className="text-sm font-normal text-slate-400">（全{totalEvents}件）</span>
+          </h2>
+          <form action="/admin" method="get" className="flex items-center gap-1.5">
+            <input
+              type="text"
+              name="q"
+              defaultValue={eventQuery}
+              placeholder="タイトルで検索"
+              className="h-9 w-44 rounded-lg border border-slate-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <button className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700">
+              検索
+            </button>
+            {eventQuery && (
+              <Link href="/admin" className="text-xs text-slate-400 hover:underline">
+                クリア
+              </Link>
+            )}
+          </form>
+        </div>
         {events.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">
-            まだイベントがありません。上のフォームから登録してみましょう。
+            {eventQuery ? `「${eventQuery}」に一致するイベントはありません。` : "まだイベントがありません。上のフォームから登録してみましょう。"}
           </p>
         ) : (
           <ul className="space-y-3">
@@ -345,6 +389,28 @@ export default async function AdminPage() {
               );
             })}
           </ul>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-5 flex items-center justify-between">
+            {page > 1 ? (
+              <Link href={pageHref(page - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                ← 前へ
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-300">← 前へ</span>
+            )}
+            <span className="text-sm text-slate-500">
+              {page} / {totalPages} ページ
+            </span>
+            {page < totalPages ? (
+              <Link href={pageHref(page + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                次へ →
+              </Link>
+            ) : (
+              <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-300">次へ →</span>
+            )}
+          </div>
         )}
       </section>
     </main>
