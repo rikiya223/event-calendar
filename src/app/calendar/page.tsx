@@ -99,8 +99,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     { label: "来月", active: view === "month" && selected.y === nextMonthYmd.y && selected.m === nextMonthYmd.m, href: hrefFor({ view: "month", date: nextMonthYmd, cat: activeCat, region }) },
   ];
 
-  // 都道府県候補とカテゴリは互いに独立なので並列取得（DB往復を1波にまとめる）
-  const [regionRows, allCategories] = await Promise.all([
+  // 都道府県候補・カテゴリ・カテゴリ使用状況は互いに独立なので並列取得（DB往復を1波に）
+  const [regionRows, allCategories, usedCatRows] = await Promise.all([
     prisma.venue.findMany({
       where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
       distinct: ["region"],
@@ -111,12 +111,23 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       select: { id: true, name: true, icon: true, colorKey: true, parentId: true },
       orderBy: { name: "asc" },
     }),
+    prisma.eventCategory.findMany({
+      where: { event: { status: "PUBLISHED" } },
+      select: { categoryId: true },
+      distinct: ["categoryId"],
+    }),
   ]);
   const availableRegions = regionRows.map((r) => r.region!).filter(Boolean);
   const catById = new Map(allCategories.map((c) => [c.id, c]));
-  const topCategories = allCategories
+  // 実際にイベントが付いているカテゴリだけを絞り込み候補に出す（空カテゴリは非表示）
+  const usedCatIds = new Set(usedCatRows.map((r) => r.categoryId));
+  const allTopCategories = allCategories
     .filter((c) => c.parentId === null)
     .map((top) => ({ ...top, childIds: allCategories.filter((c) => c.parentId === top.id).map((c) => c.id) }));
+  // 大分類：自身か子のどれかにイベントがあるものだけ表示
+  const topCategories = allTopCategories.filter(
+    (t) => usedCatIds.has(t.id) || t.childIds.some((id) => usedCatIds.has(id)),
+  );
 
   function resolveColor(categoryId: string): string {
     let cur = catById.get(categoryId);
@@ -130,6 +141,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   const selectedTop = activeCat ? topCategories.find((t) => t.id === activeCat) : null;
   const catScopeIds = selectedTop ? [selectedTop.id, ...selectedTop.childIds] : activeCat ? [activeCat] : null;
+
+  // ドリルダウン：選択中の大分類（子を選んでいれば親）と、その子分類の絞り込み候補
+  const activeCatObj = activeCat ? catById.get(activeCat) : null;
+  const activeTopId = activeCatObj ? (activeCatObj.parentId ?? activeCatObj.id) : null;
+  const activeTop = activeTopId ? topCategories.find((t) => t.id === activeTopId) : null;
+  const activeChildId = activeCatObj?.parentId ? activeCat : null;
+  // 中分類はイベントがあるものだけ表示
+  const subCategories = activeTop
+    ? activeTop.childIds.map((id) => catById.get(id)).filter((c) => c && usedCatIds.has(c.id))
+    : [];
 
   const today = todayJst();
   const fromToday = jstMidnightUtc(today.y, today.m, today.d);
@@ -242,20 +263,40 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           ))}
         </div>
 
-        {/* カテゴリピル */}
+        {/* カテゴリピル（大分類） */}
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Pill href={hrefFor({ view, date: selected, cat: null, q, region })} active={!activeCat}>すべて</Pill>
           {topCategories.map((c) => {
-            const isActive = activeCat === c.id;
+            const isActive = activeTopId === c.id;
             const color = colorForKey(c.colorKey);
             return (
-              <Pill key={c.id} href={hrefFor({ view, date: selected, cat: isActive ? null : c.id, q, region })} active={isActive} color={color}>
+              <Pill key={c.id} href={hrefFor({ view, date: selected, cat: activeCat === c.id ? null : c.id, q, region })} active={isActive} color={color}>
                 <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
                 {c.name}
               </Pill>
             );
           })}
         </div>
+
+        {/* 中分類ピル（大分類を選ぶと出る：さらに絞り込み） */}
+        {activeTop && subCategories.length > 0 && (
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
+              <Icon name="subdirectory_arrow_right" className="text-[16px]" />{activeTop.name}
+            </span>
+            <Pill href={hrefFor({ view, date: selected, cat: activeTop.id, q, region })} active={!activeChildId}>すべて</Pill>
+            {subCategories.map((sc) => (
+              <Pill
+                key={sc!.id}
+                href={hrefFor({ view, date: selected, cat: activeChildId === sc!.id ? activeTop.id : sc!.id, q, region })}
+                active={activeChildId === sc!.id}
+                color={colorForKey(activeTop.colorKey)}
+              >
+                {sc!.name}
+              </Pill>
+            ))}
+          </div>
+        )}
 
         {/* 地域フィルター（イベントのある都道府県のみ） */}
         {availableRegions.length > 0 && (
