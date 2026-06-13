@@ -11,7 +11,7 @@ const CATEGORY_TREE: {
   icon: string;
   children?: string[];
 }[] = [
-  { name: "スポーツ", colorKey: "green", icon: "⚽", children: ["野球", "サッカー", "相撲", "バスケ", "競馬", "ラグビー", "テニス", "ゴルフ", "陸上・マラソン"] },
+  { name: "スポーツ", colorKey: "green", icon: "⚽", children: ["野球", "サッカー", "相撲", "競馬", "バスケ", "ラグビー", "テニス", "ゴルフ", "バレー", "卓球", "陸上・マラソン"] },
   { name: "音楽・ライブ", colorKey: "pink", icon: "🎵", children: ["ライブ", "フェス", "クラシック"] },
   { name: "展覧会・美術館", colorKey: "amber", icon: "🖼️", children: ["美術展", "博物館", "写真展"] },
   { name: "映画・エンタメ", colorKey: "red", icon: "🎬", children: ["公開日", "試写会", "舞台・演劇"] },

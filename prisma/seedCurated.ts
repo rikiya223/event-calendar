@@ -679,6 +679,60 @@ const CURATED: Curated[] = [
     description: "「東方Project」第6作のリメイク。各機種で発売。",
     sourceUrl: "manual:game:touhou-koumakyou-newclassic-2026",
   },
+
+  // ── アニメ・声優ライブ ──
+  {
+    title: "Animelo Summer Live 2026 -Messenger-",
+    occurrences: [{ start: "2026-07-10T16:00:00+09:00", end: "2026-07-12T21:00:00+09:00" }],
+    venue: { name: "幕張メッセ", address: "千葉県千葉市美浜区中瀬2-1", region: "千葉県" },
+    categoryName: "ライブ",
+    description: "世界最大級のアニメソングの祭典「アニサマ」。3日間開催。",
+    sourceUrl: "https://anisama.tv/#2026",
+  },
+
+  // ── ゴルフ・卓球 ──
+  {
+    title: "日本女子オープンゴルフ選手権2026",
+    occurrences: [{ start: "2026-10-01T08:00:00+09:00", end: "2026-10-04T17:00:00+09:00" }],
+    venue: { name: "宝塚ゴルフ倶楽部 旧コース", region: "兵庫県" },
+    categoryName: "ゴルフ",
+    description: "国内女子ゴルフのナショナルオープン。10月1日〜4日。",
+    sourceUrl: "https://www.lpga.or.jp/#japan-womens-open-2026",
+  },
+  {
+    title: "ノジマTリーグ 2026-2027 開幕戦",
+    occurrences: [{ start: "2026-07-25T13:00:00+09:00" }],
+    venue: { name: "新竹県立体育館（台湾）" },
+    categoryName: "卓球",
+    description: "卓球Tリーグの新シーズン開幕。開幕戦は台湾・新竹で開催。",
+    sourceUrl: "https://tleague.jp/#2026-27-opening",
+  },
+
+  // ── 舞台（宝塚歌劇）──
+  {
+    title: "宝塚歌劇 宙組「黒蜥蜴／Diamond IMPULSE」（宝塚大劇場）",
+    occurrences: [{ start: "2026-05-23T11:00:00+09:00", end: "2026-07-05T16:00:00+09:00" }],
+    venue: { name: "宝塚大劇場", address: "兵庫県宝塚市栄町1-1-57", region: "兵庫県" },
+    categoryName: "舞台・演劇",
+    description: "宙組公演。江戸川乱歩原作のミステリーとショーの二本立て。会期は7月5日まで。",
+    sourceUrl: "https://kageki.hankyu.co.jp/revue/2026/kurotokage/#takarazuka",
+  },
+  {
+    title: "宝塚歌劇 星組「エスペラント」（宝塚大劇場）",
+    occurrences: [{ start: "2026-08-29T11:00:00+09:00", end: "2026-10-11T16:00:00+09:00" }],
+    venue: { name: "宝塚大劇場", address: "兵庫県宝塚市栄町1-1-57", region: "兵庫県" },
+    categoryName: "舞台・演劇",
+    description: "星組公演。会期は8月29日〜10月11日。",
+    sourceUrl: "https://kageki.hankyu.co.jp/revue/#esperanto-takarazuka-2026",
+  },
+  {
+    title: "宝塚歌劇 星組「エスペラント」（東京宝塚劇場）",
+    occurrences: [{ start: "2026-10-31T11:00:00+09:00", end: "2026-12-13T16:00:00+09:00" }],
+    venue: { name: "東京宝塚劇場", address: "東京都千代田区有楽町1-1-3", region: "東京都" },
+    categoryName: "舞台・演劇",
+    description: "星組公演の東京公演。会期は10月31日〜12月13日。",
+    sourceUrl: "https://kageki.hankyu.co.jp/revue/#esperanto-tokyo-2026",
+  },
 ];
 
 async function findOrCreateVenue(v?: Curated["venue"]) {
