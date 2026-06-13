@@ -7,6 +7,10 @@ export const CATEGORY_COLORS: Record<string, string> = {
   red: "#fca5a5", // 映画・エンタメ
   lime: "#bef264", // ゲーム・発売日
   purple: "#c4b5fd", // 祝日・カレンダー行事
+  indigo: "#a5b4fc", // アニメ・サブカル
+  orange: "#fdba74", // グルメ・フード
+  teal: "#5eead4", // 学び・ビジネス
+  rose: "#fda4af", // 暮らし・地域
   slate: "#cbd5e1", // その他
 };
 

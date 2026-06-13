@@ -40,12 +40,25 @@ export default async function ExplorePage({
   }
   const fromHref = exploreHref({ q, region });
 
-  const allCategories = await prisma.category.findMany({
-    select: { id: true, name: true, colorKey: true, parentId: true },
-    orderBy: { name: "asc" },
-  });
+  const [allCategories, usedCatRows] = await Promise.all([
+    prisma.category.findMany({
+      select: { id: true, name: true, colorKey: true, parentId: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.eventCategory.findMany({
+      where: { event: { status: "PUBLISHED" } },
+      select: { categoryId: true },
+      distinct: ["categoryId"],
+    }),
+  ]);
   const catById = new Map(allCategories.map((c) => [c.id, c]));
-  const topCategories = allCategories.filter((c) => c.parentId === null);
+  // 公開イベントがある大分類だけタイル表示（空カテゴリは出さない）
+  const usedCatIds = new Set(usedCatRows.map((r) => r.categoryId));
+  const childIdsByTop = new Map<string, string[]>();
+  for (const c of allCategories) if (c.parentId) (childIdsByTop.get(c.parentId) ?? childIdsByTop.set(c.parentId, []).get(c.parentId)!).push(c.id);
+  const topCategories = allCategories.filter(
+    (c) => c.parentId === null && (usedCatIds.has(c.id) || (childIdsByTop.get(c.id) ?? []).some((id) => usedCatIds.has(id))),
+  );
   function resolveColor(categoryId: string): string {
     let cur = catById.get(categoryId);
     while (cur && !cur.colorKey && cur.parentId) cur = catById.get(cur.parentId);
