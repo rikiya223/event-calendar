@@ -20,6 +20,7 @@ import {
   WEEKDAY_LABELS,
 } from "@/lib/calendar";
 import { activeOccurrenceFilter, isOngoing, endLabel, dedupeByEvent } from "@/lib/eventStatus";
+import { Carousel } from "./Carousel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "カレンダー" };
@@ -474,11 +475,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {filteredList.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">この条件で開催予定のイベントはありません。</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Carousel>
                 {filteredList.map((occ) => (
-                  <UpcomingCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
+                  <CarouselCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
                 ))}
-              </div>
+              </Carousel>
             )}
           </section>
         )}
@@ -573,6 +574,50 @@ function Highlight({ occ, color, catById, from }: { occ: Occ; color: string; cat
         </span>
       </Link>
     </section>
+  );
+}
+
+// 絞り込み結果カルーセル用カード（縦型・カテゴリ色のヘッダー）
+function CarouselCard({ occ, resolveColor, catById, from }: { occ: Occ; resolveColor: (id: string) => string; catById: Map<string, { name: string }>; from: string }) {
+  const p = jstParts(occ.startsAt);
+  const cat = occ.event.eventCategories[0];
+  const color = cat ? resolveColor(cat.categoryId) : colorForKey(null);
+  const ongoing = isOngoing(occ);
+  const catName = cat ? (catById.get(cat.categoryId)?.name ?? "") : "";
+  return (
+    <Link
+      href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`}
+      className="group flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-outline-variant/30 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-2 px-4 py-3" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+        <div className="leading-none text-slate-900/80">
+          {ongoing ? (
+            <div className="text-base font-bold">開催中</div>
+          ) : (
+            <>
+              <div className="text-2xl font-bold">{p.m + 1}/{p.d}</div>
+              <div className="mt-1 text-[10px] font-bold tracking-widest opacity-80">{p.y}年</div>
+            </>
+          )}
+        </div>
+        {catName && (
+          <span className="shrink-0 rounded-full bg-white/40 px-2 py-0.5 text-[10px] font-bold text-slate-900/80 backdrop-blur-sm">{catName}</span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        <h4 className="line-clamp-2 font-bold leading-snug text-on-surface group-hover:text-primary">{occ.event.canonicalTitle}</h4>
+        <p className="mt-auto flex items-center gap-1 text-xs text-on-surface-variant">
+          <Icon name="schedule" className="text-[14px]" />
+          {ongoing ? `〜${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}
+        </p>
+        {occ.event.venue && (
+          <p className="flex items-center gap-1 text-xs text-outline">
+            <Icon name="location_on" className="text-[14px]" />
+            <span className="truncate">{occ.event.venue.name}</span>
+          </p>
+        )}
+      </div>
+    </Link>
   );
 }
 
