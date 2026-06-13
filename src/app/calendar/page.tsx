@@ -269,6 +269,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               <Link
                 key={rg}
                 href={hrefFor({ view, date: selected, cat: catParam, q, region: toggleStr(regions, rg) })}
+                scroll={false}
                 className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 py-1 pl-2.5 pr-1.5 text-xs font-medium text-primary transition hover:bg-primary/15"
               >
                 {rg}<Icon name="close" className="text-[14px]" />
@@ -491,6 +492,7 @@ function Pill({ href, active, color, children }: { href: string; active: boolean
     return (
       <Link
         href={href}
+        scroll={false}
         className={`${base} text-slate-800 ${active ? "font-semibold shadow-sm ring-1 ring-black/10" : "font-medium hover:brightness-[0.97]"}`}
         style={{ backgroundColor: active ? color : `${color}26` }}
       >
@@ -501,6 +503,7 @@ function Pill({ href, active, color, children }: { href: string; active: boolean
   return (
     <Link
       href={href}
+      scroll={false}
       className={`${base} ${active ? "bg-on-surface font-semibold text-surface shadow-sm" : "bg-surface-variant/50 font-medium text-on-surface-variant hover:bg-surface-variant"}`}
     >
       {children}

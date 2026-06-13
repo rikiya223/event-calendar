@@ -17,7 +17,7 @@ export function RegionSelect({
         value=""
         onChange={(e) => {
           const o = options.find((opt) => opt.value === e.target.value);
-          if (o) router.push(o.href);
+          if (o) router.push(o.href, { scroll: false });
         }}
         aria-label="地域を追加"
         className="h-9 cursor-pointer appearance-none rounded-full bg-surface-variant/40 pl-8 pr-8 text-sm font-medium text-on-surface transition hover:bg-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
