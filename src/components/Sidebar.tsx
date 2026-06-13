@@ -7,15 +7,9 @@ import { Icon } from "./Icon";
 
 // PC用の左サイドバー（lg以上で表示）。
 export async function Sidebar({ email, admin }: { email?: string | null; admin: boolean }) {
-  // 公開イベントがある大分類だけ表示（空カテゴリは出さない）
+  // 全ての大分類を表示（空カテゴリも出す）
   const categories = await prisma.category.findMany({
-    where: {
-      parentId: null,
-      OR: [
-        { eventCategories: { some: { event: { status: "PUBLISHED" } } } },
-        { children: { some: { eventCategories: { some: { event: { status: "PUBLISHED" } } } } } },
-      ],
-    },
+    where: { parentId: null },
     orderBy: { name: "asc" },
     select: { id: true, name: true, colorKey: true },
   });

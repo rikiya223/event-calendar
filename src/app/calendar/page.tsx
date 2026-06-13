@@ -121,13 +121,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const catById = new Map(allCategories.map((c) => [c.id, c]));
   // 実際にイベントが付いているカテゴリだけを絞り込み候補に出す（空カテゴリは非表示）
   const usedCatIds = new Set(usedCatRows.map((r) => r.categoryId));
-  const allTopCategories = allCategories
+  // 全カテゴリを表示（空でも出す）。イベントがある分類を先頭に寄せる。
+  const isTopUsed = (t: { id: string; childIds: string[] }) =>
+    usedCatIds.has(t.id) || t.childIds.some((id) => usedCatIds.has(id));
+  const topCategories = allCategories
     .filter((c) => c.parentId === null)
-    .map((top) => ({ ...top, childIds: allCategories.filter((c) => c.parentId === top.id).map((c) => c.id) }));
-  // 大分類：自身か子のどれかにイベントがあるものだけ表示
-  const topCategories = allTopCategories.filter(
-    (t) => usedCatIds.has(t.id) || t.childIds.some((id) => usedCatIds.has(id)),
-  );
+    .map((top) => ({ ...top, childIds: allCategories.filter((c) => c.parentId === top.id).map((c) => c.id) }))
+    .sort((a, b) => Number(isTopUsed(b)) - Number(isTopUsed(a)) || a.name.localeCompare(b.name, "ja"));
 
   function resolveColor(categoryId: string): string {
     let cur = catById.get(categoryId);
@@ -147,9 +147,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const activeTopId = activeCatObj ? (activeCatObj.parentId ?? activeCatObj.id) : null;
   const activeTop = activeTopId ? topCategories.find((t) => t.id === activeTopId) : null;
   const activeChildId = activeCatObj?.parentId ? activeCat : null;
-  // 中分類はイベントがあるものだけ表示
+  // 中分類も全部表示（空でも出す）。イベントがある分類を先頭に。
   const subCategories = activeTop
-    ? activeTop.childIds.map((id) => catById.get(id)).filter((c) => c && usedCatIds.has(c.id))
+    ? activeTop.childIds
+        .map((id) => catById.get(id))
+        .filter((c): c is NonNullable<typeof c> => !!c)
+        .sort((a, b) => Number(usedCatIds.has(b.id)) - Number(usedCatIds.has(a.id)) || a.name.localeCompare(b.name, "ja"))
     : [];
 
   const today = todayJst();
