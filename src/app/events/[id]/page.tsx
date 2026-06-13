@@ -6,6 +6,7 @@ import { googleCalendarUrl } from "@/lib/googleCalendar";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { BookmarkButton } from "./BookmarkButton";
 import { ShareButton } from "./ShareButton";
+import { ReportButton } from "./ReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -258,6 +259,11 @@ export default async function EventDetailPage({
             </ul>
           </section>
         )}
+
+        {/* 情報の誤り報告 */}
+        <section className="border-t border-outline-variant/30 pt-4">
+          <ReportButton eventId={event.id} />
+        </section>
       </div>
 
       {/* アクションバー（画面下固定。スマホは下部ナビの上に表示） */}

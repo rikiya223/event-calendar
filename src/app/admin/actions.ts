@@ -253,3 +253,12 @@ export async function rejectSubmission(formData: FormData) {
   });
   revalidatePath("/admin");
 }
+
+// 誤り報告を「対応済み」にする
+export async function resolveReport(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.eventReport.update({ where: { id }, data: { status: "RESOLVED" } });
+  revalidatePath("/admin");
+}

@@ -9,7 +9,7 @@ export function BottomNav({ loggedIn }: { loggedIn: boolean }) {
   const pathname = usePathname();
 
   const items = [
-    { href: "/calendar", label: "カレンダー", icon: "calendar_today" },
+    { href: "/calendar", label: "ホーム", icon: "home" },
     { href: "/explore", label: "さがす", icon: "search" },
     loggedIn
       ? { href: "/mypage", label: "マイページ", icon: "person" }

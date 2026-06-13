@@ -56,6 +56,7 @@ model Event {
   eventCategories EventCategory[] // ⇔ カテゴリ（多対多）
   eventPerformers EventPerformer[] // ⇔ 出演者（多対多）
   bookmarks       Bookmark[]
+  reports         EventReport[] // 情報の誤り報告
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -201,4 +202,32 @@ model EventPerformer {
 
   @@id([eventId, performerId])
   @@index([performerId])
+}
+
+// ── 情報の誤り報告（一般ユーザーが詳細ページから送信）─────────
+enum ReportReason {
+  WRONG_DATE // 日時が違う
+  WRONG_VENUE // 会場・場所が違う
+  ENDED // 終了・中止した
+  DUPLICATE // 重複している
+  OTHER // その他
+}
+
+enum ReportStatus {
+  OPEN // 未対応
+  RESOLVED // 対応済み
+}
+
+model EventReport {
+  id            String       @id @default(uuid()) @db.Uuid
+  eventId       String       @db.Uuid
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  reason        ReportReason
+  detail        String?      @db.Text // 補足（任意）
+  reporterEmail String? // 連絡先（任意）
+  status        ReportStatus @default(OPEN)
+  createdAt     DateTime     @default(now())
+
+  @@index([status])
+  @@index([eventId])
 }

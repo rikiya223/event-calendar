@@ -6,7 +6,7 @@ import { sourceBadgeLabel, originBadgeLabel } from "@/lib/sourceBadge";
 import { findPotentialDuplicates, type DuplicateWarning } from "@/lib/duplicateCheck";
 import { EventForm } from "./EventForm";
 import { DeleteEventButton } from "./DeleteEventButton";
-import { createEvent, approveSubmission, rejectSubmission } from "./actions";
+import { createEvent, approveSubmission, rejectSubmission, resolveReport } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "管理" };
@@ -15,6 +15,14 @@ const STATUS_LABEL: Record<string, string> = {
   PUBLISHED: "公開",
   PENDING_REVIEW: "審査待ち",
   REJECTED: "却下",
+};
+
+const REPORT_REASON_LABEL: Record<string, string> = {
+  WRONG_DATE: "日時が違う",
+  WRONG_VENUE: "会場が違う",
+  ENDED: "終了・中止",
+  DUPLICATE: "重複",
+  OTHER: "その他",
 };
 
 function formatJst(d: Date) {
@@ -63,6 +71,13 @@ export default async function AdminPage() {
       return { id: s.id, email: submitter, origin: payload.origin, payload, warnings };
     }),
   );
+
+  // 未対応の誤り報告（新しい順）
+  const openReports = await prisma.eventReport.findMany({
+    where: { status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+    include: { event: { select: { id: true, canonicalTitle: true } } },
+  });
 
   // 直近の登録イベント（開催回・会場・カテゴリを含む）
   const events = await prisma.event.findMany({
@@ -188,6 +203,54 @@ export default async function AdminPage() {
                     <input type="hidden" name="id" value={item.id} />
                     <button className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
                       却下
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* 誤り報告 */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">
+          誤り報告
+          <span className="ml-1 text-sm font-normal text-slate-400">（{openReports.length}件・未対応）</span>
+        </h2>
+        {openReports.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400">
+            未対応の報告はありません。
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {openReports.map((r) => (
+              <li key={r.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/events/${r.event.id}`}
+                      className="font-semibold text-slate-800 hover:text-primary hover:underline"
+                    >
+                      {r.event.canonicalTitle}
+                    </Link>
+                    <p className="mt-1 flex items-center gap-2">
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                        {REPORT_REASON_LABEL[r.reason] ?? r.reason}
+                      </span>
+                      <span className="text-xs text-slate-400">{formatJst(r.createdAt)}</span>
+                    </p>
+                    {r.detail && (
+                      <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-600">{r.detail}</p>
+                    )}
+                    {r.reporterEmail && (
+                      <p className="mt-1 text-xs text-slate-400">連絡先: {r.reporterEmail}</p>
+                    )}
+                  </div>
+                  <form action={resolveReport} className="shrink-0">
+                    <input type="hidden" name="id" value={r.id} />
+                    <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                      対応済みにする
                     </button>
                   </form>
                 </div>

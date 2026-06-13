@@ -21,7 +21,7 @@ export async function Sidebar({ email, admin }: { email?: string | null; admin: 
       </Link>
 
       <nav className="flex flex-col gap-1">
-        <NavLink href="/calendar" icon="calendar_today" label="カレンダー" />
+        <NavLink href="/calendar" icon="home" label="ホーム" />
         <NavLink href="/explore" icon="search" label="さがす" />
         <NavLink href="/submit" icon="add_circle" label="投稿する" />
         <NavLink href="/mypage" icon="person" label="マイページ" />
