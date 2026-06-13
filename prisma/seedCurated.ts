@@ -546,6 +546,33 @@ const CURATED: Curated[] = [
     sourceUrl: "https://www.monster-bash.com/#2026",
   },
 
+  // ── ラグビー日本代表（秋の欧州遠征／ネーションズチャンピオンシップ）──
+  // ※すべて欧州アウェイ。日本時間は深夜〜翌朝。日付は現地基準で掲載。
+  {
+    title: "ラグビー日本代表 vs ウェールズ",
+    occurrences: [{ start: "2026-11-07T23:00:00+09:00" }],
+    venue: { name: "プリンシパリティ・スタジアム（英・カーディフ）" },
+    categoryName: "ラグビー",
+    description: "秋の欧州遠征（ネーションズチャンピオンシップ）。現地11月7日。",
+    sourceUrl: "https://www.rugby-japan.jp/#wal-2026",
+  },
+  {
+    title: "ラグビー日本代表 vs イングランド",
+    occurrences: [{ start: "2026-11-14T23:00:00+09:00" }],
+    venue: { name: "アリアンツ・スタジアム（英・ロンドン／トゥイッケナム）" },
+    categoryName: "ラグビー",
+    description: "秋の欧州遠征。聖地トゥイッケナムでイングランドと対戦。現地11月14日。",
+    sourceUrl: "https://www.rugby-japan.jp/#eng-2026",
+  },
+  {
+    title: "ラグビー日本代表 vs スコットランド",
+    occurrences: [{ start: "2026-11-21T23:00:00+09:00" }],
+    venue: { name: "マレーフィールド（英・エディンバラ）" },
+    categoryName: "ラグビー",
+    description: "秋の欧州遠征の最終戦。スコットランドと対戦。現地11月21日。",
+    sourceUrl: "https://www.rugby-japan.jp/#sco-2026",
+  },
+
   // ── 同人・即売会 ──
   {
     title: "文学フリマ東京43",
