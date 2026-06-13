@@ -472,6 +472,89 @@ const CURATED: Curated[] = [
     description: "「踊る阿呆に見る阿呆」で知られる日本最大級の盆踊り。8月11日〜15日。",
     sourceUrl: "https://www.awaodori-kaikan.jp/#2026",
   },
+
+  // ── 総合スポーツ大会 ──
+  {
+    title: "第20回 アジア競技大会（愛知・名古屋2026）",
+    occurrences: [{ start: "2026-09-19T19:00:00+09:00", end: "2026-10-04T22:00:00+09:00" }],
+    venue: { name: "パロマ瑞穂スタジアムほか（愛知県）", region: "愛知県" },
+    categoryName: "スポーツ",
+    description: "アジア最大の総合競技大会が日本で開催。9月19日開会式〜10月4日閉会式、43競技。",
+    sourceUrl: "https://www.aichi-nagoya2026.org/#2026",
+  },
+
+  // ── 競馬（JRA G1・秋〜年末）──
+  {
+    title: "天皇賞（秋）",
+    occurrences: [{ start: "2026-11-15T15:40:00+09:00" }],
+    venue: { name: "東京競馬場", address: "東京都府中市日吉町1-1", region: "東京都" },
+    categoryName: "競馬",
+    description: "秋古馬中距離の頂点を決めるGⅠ（芝2000m）。",
+    sourceUrl: "https://www.jra.go.jp/keiba/g1/akiten.html#2026",
+  },
+  {
+    title: "マイルチャンピオンシップ",
+    occurrences: [{ start: "2026-11-29T15:40:00+09:00" }],
+    venue: { name: "京都競馬場", address: "京都府京都市伏見区葭島渡場島町32", region: "京都府" },
+    categoryName: "競馬",
+    description: "秋のマイル王決定戦GⅠ（芝1600m）。",
+    sourceUrl: "https://www.jra.go.jp/datafile/seiseki/replay/2026/g1.html#mile-cs",
+  },
+  {
+    title: "ジャパンカップ",
+    occurrences: [{ start: "2026-12-06T15:40:00+09:00" }],
+    venue: { name: "東京競馬場", address: "東京都府中市日吉町1-1", region: "東京都" },
+    categoryName: "競馬",
+    description: "世界の強豪が集う国際GⅠ（芝2400m）。",
+    sourceUrl: "https://www.jra.go.jp/datafile/seiseki/replay/2026/g1.html#japan-cup",
+  },
+  {
+    title: "ホープフルステークス",
+    occurrences: [{ start: "2026-12-26T15:30:00+09:00" }],
+    venue: { name: "中山競馬場", address: "千葉県船橋市古作1-1-1", region: "千葉県" },
+    categoryName: "競馬",
+    description: "2歳GⅠ。翌年クラシックを占う一戦。",
+    sourceUrl: "https://www.jra.go.jp/datafile/seiseki/replay/2026/g1.html#hopeful",
+  },
+  {
+    title: "有馬記念",
+    occurrences: [{ start: "2026-12-27T15:25:00+09:00" }],
+    venue: { name: "中山競馬場", address: "千葉県船橋市古作1-1-1", region: "千葉県" },
+    categoryName: "競馬",
+    description: "ファン投票で出走馬が決まる年末のグランプリGⅠ（芝2500m）。1年の総決算。",
+    sourceUrl: "https://www.jra.go.jp/datafile/seiseki/replay/2026/g1.html#arima",
+  },
+
+  // ── 音楽フェス（追加）──
+  {
+    title: "RISING SUN ROCK FESTIVAL 2026 in EZO",
+    occurrences: [{ start: "2026-08-14T13:00:00+09:00", end: "2026-08-15T23:59:00+09:00" }],
+    venue: { name: "石狩湾新港樽川ふ頭横 特設ステージ", region: "北海道" },
+    categoryName: "フェス",
+    description: "朝日を浴びてフィナーレを迎えるオールナイト野外フェス。8月14・15日。",
+    sourceUrl: "https://rsr.wess.co.jp/2026/",
+  },
+  {
+    title: "MONSTER baSH 2026",
+    occurrences: [
+      { start: "2026-08-22T10:00:00+09:00" },
+      { start: "2026-08-23T10:00:00+09:00" },
+    ],
+    venue: { name: "国営讃岐まんのう公園", region: "香川県" },
+    categoryName: "フェス",
+    description: "中四国最大級の野外ロックフェス。8月22・23日。",
+    sourceUrl: "https://www.monster-bash.com/#2026",
+  },
+
+  // ── 同人・即売会 ──
+  {
+    title: "文学フリマ東京43",
+    occurrences: [{ start: "2026-11-08T12:00:00+09:00", end: "2026-11-08T17:00:00+09:00" }],
+    venue: { name: "東京ビッグサイト", address: "東京都江東区有明3-11-1", region: "東京都" },
+    categoryName: "その他",
+    description: "文学作品の展示即売会。プロ・アマ問わず多彩な“文学”が並ぶ。11月8日開催。",
+    sourceUrl: "https://bunfree.net/event/tokyo43/",
+  },
 ];
 
 async function findOrCreateVenue(v?: Curated["venue"]) {
