@@ -25,7 +25,7 @@ import { RegionSelect } from "./RegionSelect";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "カレンダー" };
 
-type SearchParams = { view?: string; date?: string; cat?: string; q?: string; region?: string };
+type SearchParams = { view?: string; date?: string; ex?: string; q?: string; region?: string; open?: string };
 
 function normView(v?: string): CalView {
   return v === "week" || v === "day" ? v : "month";
@@ -37,13 +37,16 @@ function normalizeYmd(ymd: Ymd): Ymd {
 function paramFor(ymd: Ymd): string {
   return ymdKey(normalizeYmd(ymd));
 }
-function hrefFor(opts: { view: CalView; date: Ymd; cat?: string | null; q?: string | null; region?: string | null }) {
+// ex = 除外カテゴリ（カンマ区切り）。デフォルトは全表示で、ここに入った分だけ隠す。
+// open = 中分類を開いている大分類id（同時に開けるのは1つ＝アコーディオン）。
+function hrefFor(opts: { view: CalView; date: Ymd; ex?: string | null; q?: string | null; region?: string | null; open?: string | null }) {
   const sp = new URLSearchParams();
   sp.set("view", opts.view);
   sp.set("date", paramFor(opts.date));
-  if (opts.cat) sp.set("cat", opts.cat);
+  if (opts.ex) sp.set("ex", opts.ex);
   if (opts.q) sp.set("q", opts.q);
   if (opts.region) sp.set("region", opts.region);
+  if (opts.open) sp.set("open", opts.open);
   return `/calendar?${sp.toString()}`;
 }
 
@@ -51,7 +54,19 @@ const occInclude = {
   event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } },
 } as const;
 
-async function loadOccurrences(args: { start: Date; end: Date; catScopeIds: string[] | null; q: string; regions: string[] }) {
+// 除外カテゴリ（中分類idの配列）から、イベント側の where 断片を作る。
+// 「除外されていない分類を1つでも持つ」or「無分類」のイベントだけを残す＝除外方式。
+function excludeEventWhere(excludeIds: string[]) {
+  if (excludeIds.length === 0) return {};
+  return {
+    OR: [
+      { eventCategories: { some: { categoryId: { notIn: excludeIds } } } },
+      { eventCategories: { none: {} } },
+    ],
+  };
+}
+
+async function loadOccurrences(args: { start: Date; end: Date; excludeIds: string[]; q: string; regions: string[] }) {
   return prisma.eventOccurrence.findMany({
     where: {
       // 範囲内に開始する回 ＋ 範囲より前に始まり範囲にかかる会期もの（展覧会など）の両方を拾う
@@ -61,7 +76,7 @@ async function loadOccurrences(args: { start: Date; end: Date; catScopeIds: stri
       ],
       event: {
         status: "PUBLISHED",
-        ...(args.catScopeIds ? { eventCategories: { some: { categoryId: { in: args.catScopeIds } } } } : {}),
+        ...excludeEventWhere(args.excludeIds),
         ...(args.q ? { canonicalTitle: { contains: args.q, mode: "insensitive" as const } } : {}),
         ...(args.regions.length ? { venue: { region: { in: args.regions } } } : {}),
       },
@@ -78,13 +93,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const selected = parseDateParam(sp.date);
   const anchor = view === "month" ? { ...selected, d: 1 } : selected;
   const q = (sp.q ?? "").trim();
-  // 複数選択：cat / region はカンマ区切りリストとして扱う
-  const activeCats = (sp.cat ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const activeCatSet = new Set(activeCats);
+  // 除外方式：ex（除外した中分類id）/ region はカンマ区切りリスト。デフォルトは全表示。
+  const ex = (sp.ex ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const exSet = new Set(ex);
   const regions = (sp.region ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const regionSet = new Set(regions);
-  const catParam = activeCats.length ? activeCats.join(",") : null; // 現フィルタ維持用
+  const exParam = ex.length ? ex.join(",") : null; // 現フィルタ維持用
   const regionParam = regions.length ? regions.join(",") : null;
+  const openId = (sp.open ?? "").trim() || null; // 中分類を開いている大分類
   // リストに id を足し引きしてカンマ文字列（空なら null）を返す
   const toggleStr = (list: string[], id: string) => {
     const n = list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
@@ -131,41 +147,29 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     return firstCat ? resolveColor(firstCat) : colorForKey(null);
   }
 
-  // 選択中カテゴリ（複数可）のスコープ＝各idについて、大分類なら子も含めて展開した和集合
-  const catScopeIds =
-    activeCats.length === 0
-      ? null
-      : [
-          ...new Set(
-            activeCats.flatMap((id) => {
-              const top = topCategories.find((t) => t.id === id);
-              return top ? [top.id, ...top.childIds] : [id];
-            }),
-          ),
-        ];
-
-  // ドリルダウン：選択中の大分類（自身 or 子が選ばれている大分類）ごとに中分類を出す
-  const activeTops = topCategories.filter(
-    (t) => activeCatSet.has(t.id) || t.childIds.some((id) => activeCatSet.has(id)),
-  );
-  const subCatsOf = (t: (typeof topCategories)[number]) =>
+  type Top = (typeof topCategories)[number];
+  // 大分類の状態：on=全部表示 / off=子が全部除外 / partial=一部だけ除外
+  const topState = (t: Top): "on" | "off" | "partial" => {
+    if (t.childIds.length === 0) return "on";
+    const exCount = t.childIds.filter((id) => exSet.has(id)).length;
+    if (exCount === 0) return "on";
+    if (exCount === t.childIds.length) return "off";
+    return "partial";
+  };
+  // 大分類トグル：offなら子を全部表示に戻す、そうでなければ子を全部除外する
+  const toggleTopEx = (t: Top): string | null => {
+    const next = new Set(exSet);
+    if (topState(t) === "off") t.childIds.forEach((id) => next.delete(id));
+    else t.childIds.forEach((id) => next.add(id));
+    return next.size ? [...next].join(",") : null;
+  };
+  // 中分類を出す（イベントがある分類を先頭に寄せる）
+  const subCatsOf = (t: Top) =>
     t.childIds
       .map((id) => catById.get(id))
       .filter((c): c is NonNullable<typeof c> => !!c)
       .sort((a, b) => Number(usedCatIds.has(b.id)) - Number(usedCatIds.has(a.id)) || a.name.localeCompare(b.name, "ja"));
-  // 大分類ピルのトグル先（active=自身or子が選択中。押すと自身＋子を全部外す/自身を足す）
-  const toggleTopHref = (t: (typeof topCategories)[number]) => {
-    const isOn = activeCatSet.has(t.id) || t.childIds.some((id) => activeCatSet.has(id));
-    const next = isOn ? activeCats.filter((id) => id !== t.id && !t.childIds.includes(id)) : [...activeCats, t.id];
-    return next.length ? next.join(",") : null;
-  };
-  // 中分類ピルのトグル先（押すと子をトグル。追加時は親の大分類idを外して絞る）
-  const toggleChildHref = (t: (typeof topCategories)[number], childId: string) => {
-    const next = activeCatSet.has(childId)
-      ? activeCats.filter((id) => id !== childId)
-      : [...activeCats.filter((id) => id !== t.id), childId];
-    return next.length ? next.join(",") : null;
-  };
+  const openTop = openId ? topCategories.find((t) => t.id === openId) ?? null : null;
 
   const today = todayJst();
   const fromToday = jstMidnightUtc(today.y, today.m, today.d);
@@ -176,13 +180,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   // 検索・近日開催・表示範囲の取得は互いに独立なので並列実行（直列の往復を1波に）
   const [searchResults, upcomingRaw, occurrences] = await Promise.all([
-    q ? loadOccurrences({ start: fromToday, end: farFuture, catScopeIds, q, regions }) : Promise.resolve([] as Occ[]),
+    q ? loadOccurrences({ start: fromToday, end: farFuture, excludeIds: ex, q, regions }) : Promise.resolve([] as Occ[]),
     prisma.eventOccurrence.findMany({
       where: {
         ...activeOccurrenceFilter(),
         event: {
           status: "PUBLISHED",
-          ...(catScopeIds ? { eventCategories: { some: { categoryId: { in: catScopeIds } } } } : {}),
+          ...excludeEventWhere(ex),
           ...(regions.length ? { venue: { region: { in: regions } } } : {}),
         },
       },
@@ -190,12 +194,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       take: 300,
       include: occInclude,
     }),
-    q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, catScopeIds, q, regions }),
+    q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, excludeIds: ex, q, regions }),
   ]);
   // 近日開催はイベント単位で重複排除（大相撲など多数の開催回を1件に）
   const upcoming = dedupeByEvent(upcomingRaw, 6);
   // カテゴリ/地域で絞り込み中は、該当イベントを日付順の一覧で表示する
-  const isFiltering = (activeCats.length > 0 || regions.length > 0) && !q;
+  const isFiltering = (ex.length > 0 || regions.length > 0) && !q;
   const filteredList = isFiltering ? dedupeByEvent(upcomingRaw, 200) : [];
   // 「直近のイベント」欄に出すリスト：絞り込み中は結果、通常は近日開催。
   const nearbyList = isFiltering ? filteredList : dedupeByEvent(upcomingRaw, 30);
@@ -223,8 +227,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const highlight = upcoming[0];
 
   // イベント詳細から戻ったときに現在の絞り込みを復元するための from
-  const backHref = hrefFor({ view, date: selected, cat: catParam, q, region: regionParam });
-  const hasFilters = activeCats.length > 0 || regions.length > 0 || !!q;
+  const backHref = hrefFor({ view, date: selected, ex: exParam, q, region: regionParam });
+  const hasFilters = ex.length > 0 || regions.length > 0 || !!q;
 
   // 地域プルダウン＝「地域を追加」。未選択の都道府県だけを候補に、選ぶとリストに足す。
   const addRegionOptions = availableRegions
@@ -232,7 +236,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     .map((rg) => ({
       label: rg,
       value: rg,
-      href: hrefFor({ view, date: selected, cat: catParam, q, region: toggleStr(regions, rg) }),
+      href: hrefFor({ view, date: selected, ex: exParam, q, region: toggleStr(regions, rg), open: openId }),
     }));
 
   return (
@@ -243,7 +247,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           <form action="/calendar" method="get" className="relative w-full sm:max-w-md">
             <input type="hidden" name="view" value={view} />
             <input type="hidden" name="date" value={paramFor(selected)} />
-            {catParam && <input type="hidden" name="cat" value={catParam} />}
+            {exParam && <input type="hidden" name="ex" value={exParam} />}
             {regionParam && <input type="hidden" name="region" value={regionParam} />}
             <Icon name="search" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-outline" />
             <input
@@ -255,7 +259,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             />
             {q && (
               <Link
-                href={hrefFor({ view, date: selected, cat: catParam, q: null, region: regionParam })}
+                href={hrefFor({ view, date: selected, ex: exParam, q: null, region: regionParam, open: openId })}
                 aria-label="検索をクリア"
                 className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-outline hover:bg-surface-variant/60"
               >
@@ -268,7 +272,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {regions.map((rg) => (
               <Link
                 key={rg}
-                href={hrefFor({ view, date: selected, cat: catParam, q, region: toggleStr(regions, rg) })}
+                href={hrefFor({ view, date: selected, ex: exParam, q, region: toggleStr(regions, rg), open: openId })}
                 scroll={false}
                 className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 py-1 pl-2.5 pr-1.5 text-xs font-medium text-primary transition hover:bg-primary/15"
               >
@@ -282,7 +286,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 return (
                   <Link
                     key={v}
-                    href={hrefFor({ view: v, date: selected, cat: catParam, q, region: regionParam })}
+                    href={hrefFor({ view: v, date: selected, ex: exParam, q, region: regionParam, open: openId })}
                     className={`rounded-full px-4 py-1.5 font-medium transition ${
                       isActive ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
                     }`}
@@ -295,47 +299,66 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         </div>
 
-        {/* カテゴリピル（大分類・複数選択）。押すたびに足し引きされる。*/}
+        {/* カテゴリ（除外方式）。デフォルト全表示で、押すとそのカテゴリを隠す。
+            各ピル左＝表示/非表示トグル、右の▾＝中分類を開く（同時に1つだけ）。*/}
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <Pill href={hrefFor({ view, date: selected, cat: null, q, region: regionParam })} active={activeCats.length === 0}>すべて</Pill>
           {topCategories.map((c) => {
-            const isActive = activeCatSet.has(c.id) || c.childIds.some((id) => activeCatSet.has(id));
+            const state = topState(c);
             const color = colorForKey(c.colorKey);
+            const isOpen = openId === c.id;
             return (
-              <Pill key={c.id} href={hrefFor({ view, date: selected, cat: toggleTopHref(c), q, region: regionParam })} active={isActive} color={color}>
-                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                {c.name}
-              </Pill>
+              <div key={c.id} className="inline-flex shrink-0 items-stretch overflow-hidden rounded-full">
+                <TopToggle
+                  href={hrefFor({ view, date: selected, ex: toggleTopEx(c), q, region: regionParam, open: openId })}
+                  state={state}
+                  color={color}
+                >
+                  {c.name}
+                </TopToggle>
+                <Link
+                  href={hrefFor({ view, date: selected, ex: exParam, q, region: regionParam, open: isOpen ? null : c.id })}
+                  scroll={false}
+                  aria-label={`${c.name}の中分類`}
+                  className={`grid w-7 place-items-center border-l transition ${
+                    state === "off"
+                      ? "border-black/5 bg-surface-variant/40 text-outline"
+                      : "border-black/5 text-slate-700"
+                  } ${isOpen ? "bg-black/[0.06]" : "hover:bg-black/[0.04]"}`}
+                  style={state === "off" ? undefined : { backgroundColor: `${color}26` }}
+                >
+                  <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
+                </Link>
+              </div>
             );
           })}
         </div>
 
-        {/* 中分類ピル（選択中の大分類ごとに表示・複数選択） */}
-        {activeTops.map((t) => (
-          <div key={t.id} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* 中分類（開いている大分類の分だけ・1段のみ。押すと表示/非表示）*/}
+        {openTop && (
+          <div className="-mx-4 flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface-variant/30 px-4 py-2.5 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
-              <Icon name="subdirectory_arrow_right" className="text-[16px]" />{t.name}
+              <Icon name="subdirectory_arrow_right" className="text-[16px]" />{openTop.name}
             </span>
-            {subCatsOf(t).map((sc) => (
-              <Pill
+            {subCatsOf(openTop).map((sc) => (
+              <SubToggle
                 key={sc.id}
-                href={hrefFor({ view, date: selected, cat: toggleChildHref(t, sc.id), q, region: regionParam })}
-                active={activeCatSet.has(sc.id)}
-                color={colorForKey(t.colorKey)}
+                href={hrefFor({ view, date: selected, ex: toggleStr(ex, sc.id), q, region: regionParam, open: openId })}
+                off={exSet.has(sc.id)}
+                color={colorForKey(openTop.colorKey)}
               >
                 {sc.name}
-              </Pill>
+              </SubToggle>
             ))}
           </div>
-        ))}
+        )}
 
-        {/* 絞り込み中の一括解除 */}
+        {/* 絞り込み中の一括解除（除外・地域・検索をすべてリセット）*/}
         {hasFilters && (
           <div className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Icon name="filter_alt" className="text-[16px]" />
-            <span>絞り込み中</span>
+            <span>{ex.length > 0 ? `${ex.length}カテゴリを非表示中` : "絞り込み中"}</span>
             <Link href={hrefFor({ view, date: selected })} className="inline-flex items-center gap-1 rounded-full bg-surface-variant/60 px-3 py-1 font-medium text-on-surface transition hover:bg-surface-variant">
-              <Icon name="close" className="text-[14px]" />すべて解除
+              <Icon name="close" className="text-[14px]" />すべて表示に戻す
             </Link>
           </div>
         )}
@@ -367,7 +390,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         )}
 
         {q ? (
-          <SearchResults q={q} results={searchResults} resolveColor={resolveColor} catById={catById} clearHref={hrefFor({ view, date: selected, cat: catParam, q: null, region: regionParam })} from={backHref} />
+          <SearchResults q={q} results={searchResults} resolveColor={resolveColor} catById={catById} clearHref={hrefFor({ view, date: selected, ex: exParam, q: null, region: regionParam, open: openId })} from={backHref} />
         ) : view === "month" ? (
           <>
             {/* ダッシュボード：カレンダー＋選択日リスト */}
@@ -377,9 +400,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 <div className="mb-3 flex items-center justify-between px-1">
                   <h2 className="text-xl font-bold text-on-surface">{anchor.y}年{anchor.m + 1}月</h2>
                   <div className="flex items-center gap-1">
-                    <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, -1), cat: catParam, q, region: regionParam })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="前の月"><Icon name="chevron_left" /></Link>
-                    <Link href={hrefFor({ view, date: todayJst(), cat: catParam, q, region: regionParam })} className="rounded-lg px-2 py-1 text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50">今日</Link>
-                    <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, 1), cat: catParam, q, region: regionParam })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="次の月"><Icon name="chevron_right" /></Link>
+                    <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, -1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="前の月"><Icon name="chevron_left" /></Link>
+                    <Link href={hrefFor({ view, date: todayJst(), ex: exParam, q, region: regionParam, open: openId })} className="rounded-lg px-2 py-1 text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50">今日</Link>
+                    <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, 1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="次の月"><Icon name="chevron_right" /></Link>
                   </div>
                 </div>
                 <div className="grid grid-cols-7 border-t border-outline-variant/20">
@@ -394,8 +417,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                     const isToday = key === todayKey;
                     const isSelected = key === selectedKey;
                     const params = new URLSearchParams({ view: "month", date: key });
-                    if (catParam) params.set("cat", catParam);
+                    if (exParam) params.set("ex", exParam);
                     if (regionParam) params.set("region", regionParam);
+                    if (openId) params.set("open", openId);
                     return (
                       <Link
                         key={key}
@@ -485,17 +509,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   );
 }
 
-function Pill({ href, active, color, children }: { href: string; active: boolean; color?: string; children: React.ReactNode }) {
-  // 色付き（カテゴリ）はその色で塗る。色なし（期間・地域・すべて）はグレー/濃色。枠線は使わない。
-  const base = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition";
-  if (color) {
+// 大分類の表示/非表示トグル（除外方式）。on=色付き / partial=薄い色＋「一部」/ off=グレー＋打ち消し線。
+function TopToggle({ href, state, color, children }: { href: string; state: "on" | "off" | "partial"; color: string; children: React.ReactNode }) {
+  const base = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap py-1.5 pl-3.5 pr-3 text-sm font-medium transition";
+  if (state === "off") {
     return (
-      <Link
-        href={href}
-        scroll={false}
-        className={`${base} text-slate-800 ${active ? "font-semibold shadow-sm ring-1 ring-black/10" : "font-medium hover:brightness-[0.97]"}`}
-        style={{ backgroundColor: active ? color : `${color}26` }}
-      >
+      <Link href={href} scroll={false} className={`${base} bg-surface-variant/40 text-outline line-through hover:bg-surface-variant/60`}>
+        <span className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-current" />
         {children}
       </Link>
     );
@@ -504,8 +524,28 @@ function Pill({ href, active, color, children }: { href: string; active: boolean
     <Link
       href={href}
       scroll={false}
-      className={`${base} ${active ? "bg-on-surface font-semibold text-surface shadow-sm" : "bg-surface-variant/50 font-medium text-on-surface-variant hover:bg-surface-variant"}`}
+      className={`${base} text-slate-800 hover:brightness-[0.97]`}
+      style={{ backgroundColor: state === "partial" ? `${color}26` : `${color}59` }}
     >
+      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+      {children}
+      {state === "partial" && <span className="rounded bg-white/70 px-1 text-[10px] font-semibold text-slate-500">一部</span>}
+    </Link>
+  );
+}
+
+// 中分類の表示/非表示トグル。off＝グレー＋打ち消し線、on＝色付き。
+function SubToggle({ href, off, color, children }: { href: string; off: boolean; color: string; children: React.ReactNode }) {
+  const base = "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition";
+  if (off) {
+    return (
+      <Link href={href} scroll={false} className={`${base} bg-white/60 font-medium text-outline line-through hover:bg-white`}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <Link href={href} scroll={false} className={`${base} font-medium text-slate-800 hover:brightness-[0.97]`} style={{ backgroundColor: `${color}40` }}>
       {children}
     </Link>
   );
