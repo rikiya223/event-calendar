@@ -21,6 +21,7 @@ import {
 } from "@/lib/calendar";
 import { activeOccurrenceFilter, isOngoing, endLabel, dedupeByEvent } from "@/lib/eventStatus";
 import { Carousel } from "./Carousel";
+import { RegionSelect } from "./RegionSelect";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "カレンダー" };
@@ -213,6 +214,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const backHref = hrefFor({ view, date: selected, cat: activeCat, q, region });
   const hasFilters = !!activeCat || !!region || !!q;
 
+  // 地域プルダウンの選択肢（URLを事前生成してクライアントで遷移）
+  const regionOptions = [
+    { label: "全国", value: "", href: hrefFor({ view, date: selected, cat: activeCat, q, region: null }) },
+    ...availableRegions.map((rg) => ({
+      label: rg,
+      value: rg,
+      href: hrefFor({ view, date: selected, cat: activeCat, q, region: rg }),
+    })),
+  ];
+
   return (
     <main className="px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -241,22 +252,25 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               </Link>
             )}
           </form>
-          <div className="inline-flex shrink-0 self-start rounded-full bg-surface-variant/40 p-1 text-sm sm:self-auto">
-            {(["month", "week", "day"] as CalView[]).map((v) => {
-              const label = v === "month" ? "月" : v === "week" ? "週" : "日";
-              const isActive = v === view;
-              return (
-                <Link
-                  key={v}
-                  href={hrefFor({ view: v, date: selected, cat: activeCat, q, region })}
-                  className={`rounded-full px-4 py-1.5 font-medium transition ${
-                    isActive ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-auto">
+            {availableRegions.length > 0 && <RegionSelect value={region ?? ""} options={regionOptions} />}
+            <div className="inline-flex rounded-full bg-surface-variant/40 p-1 text-sm">
+              {(["month", "week", "day"] as CalView[]).map((v) => {
+                const label = v === "month" ? "月" : v === "week" ? "週" : "日";
+                const isActive = v === view;
+                return (
+                  <Link
+                    key={v}
+                    href={hrefFor({ view: v, date: selected, cat: activeCat, q, region })}
+                    className={`rounded-full px-4 py-1.5 font-medium transition ${
+                      isActive ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -300,21 +314,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 color={colorForKey(activeTop.colorKey)}
               >
                 {sc!.name}
-              </Pill>
-            ))}
-          </div>
-        )}
-
-        {/* 地域フィルター（イベントのある都道府県のみ） */}
-        {availableRegions.length > 0 && (
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
-              <Icon name="location_on" className="text-[16px]" />地域
-            </span>
-            <Pill href={hrefFor({ view, date: selected, cat: activeCat, q, region: null })} active={!region}>全国</Pill>
-            {availableRegions.map((rg) => (
-              <Pill key={rg} href={hrefFor({ view, date: selected, cat: activeCat, q, region: region === rg ? null : rg })} active={region === rg}>
-                {rg}
               </Pill>
             ))}
           </div>
