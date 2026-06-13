@@ -314,6 +314,84 @@ const CURATED: Curated[] = [
     description: "Rockstar Gamesの超大作オープンワールド。PS5／Xbox Series X|S向けに発売（Take-Two決算で正式発表）。",
     sourceUrl: "https://www.rockstargames.com/VI",
   },
+
+  // ── サッカー日本代表（FIFAワールドカップ2026・グループF）──
+  {
+    title: "W杯2026 日本代表 vs オランダ（グループF 第1戦）",
+    occurrences: [{ start: "2026-06-15T05:00:00+09:00" }], // 日本時間
+    venue: { name: "AT&Tスタジアム（米国・アーリントン）" },
+    categoryName: "サッカー",
+    description: "北中米ワールドカップ、日本のグループステージ初戦。日本時間6月15日早朝キックオフ。",
+    sourceUrl: "https://www.jfa.jp/samuraiblue/worldcup_2026/#ned",
+  },
+  {
+    title: "W杯2026 日本代表 vs チュニジア（グループF 第2戦）",
+    occurrences: [{ start: "2026-06-21T13:00:00+09:00" }],
+    venue: { name: "エスタディオBBVA（メキシコ・モンテレイ）" },
+    categoryName: "サッカー",
+    description: "北中米ワールドカップ、日本のグループステージ第2戦。",
+    sourceUrl: "https://www.jfa.jp/samuraiblue/worldcup_2026/#tun",
+  },
+  {
+    title: "FIFAワールドカップ2026 決勝",
+    occurrences: [{ start: "2026-07-20T04:00:00+09:00" }], // 現地7/19、日本時間7/20早朝
+    venue: { name: "ニューヨーク・ニュージャージー・スタジアム（米国）" },
+    categoryName: "サッカー",
+    description: "史上最多48か国の北中米ワールドカップ決勝。現地7月19日（日本時間7月20日早朝）。",
+    sourceUrl: "https://www.fifa.com/#wc2026-final",
+  },
+
+  // ── 高校野球・大相撲（夏〜秋〜冬）──
+  {
+    title: "第108回 全国高校野球選手権大会（夏の甲子園）",
+    occurrences: [{ start: "2026-08-05T08:00:00+09:00", end: "2026-08-22T17:00:00+09:00" }],
+    venue: { name: "阪神甲子園球場", address: "兵庫県西宮市甲子園町1-82", region: "兵庫県" },
+    categoryName: "野球",
+    description: "全国49代表が出場する夏の甲子園。8月5日開幕〜22日決勝。今大会からDH制を導入。",
+    sourceUrl: "https://www.asahi.com/koshien/#2026summer",
+  },
+  {
+    title: "大相撲 秋場所（九月場所）",
+    occurrences: [{ start: "2026-09-13T08:00:00+09:00", end: "2026-09-27T18:00:00+09:00" }],
+    venue: { name: "両国国技館", address: "東京都墨田区横網1-3-28", region: "東京都" },
+    categoryName: "相撲",
+    description: "大相撲九月場所。9月13日初日〜27日千秋楽の15日間。",
+    sourceUrl: "https://www.sumo.or.jp/#aki-2026",
+  },
+  {
+    title: "大相撲 九州場所（十一月場所）",
+    occurrences: [{ start: "2026-11-08T08:00:00+09:00", end: "2026-11-22T18:00:00+09:00" }],
+    venue: { name: "福岡国際センター", address: "福岡県福岡市博多区築港本町2-2", region: "福岡県" },
+    categoryName: "相撲",
+    description: "大相撲の年内最後の本場所。11月8日初日〜22日千秋楽の15日間。",
+    sourceUrl: "https://www.sumo.or.jp/#kyushu-2026",
+  },
+
+  // ── 全国の特別展（美術・自然史博物館）──
+  {
+    title: "マリー・アントワネット・スタイル（横浜美術館）",
+    occurrences: [{ start: "2026-08-01T10:00:00+09:00", end: "2026-11-23T18:00:00+09:00" }],
+    venue: { name: "横浜美術館", address: "神奈川県横浜市西区みなとみらい3-4-1", region: "神奈川県" },
+    categoryName: "美術展",
+    description: "悲劇の王妃マリー・アントワネットの美意識を多彩な品々でたどる展覧会。会期は11月23日まで。",
+    sourceUrl: "https://yokohama.art.museum/#marie-antoinette-2026",
+  },
+  {
+    title: "フェルメール「真珠の耳飾りの少女」（大阪中之島美術館）",
+    occurrences: [{ start: "2026-08-21T10:00:00+09:00", end: "2026-09-27T18:00:00+09:00" }],
+    venue: { name: "大阪中之島美術館", address: "大阪府大阪市北区中之島4-3-1", region: "大阪府" },
+    categoryName: "美術展",
+    description: "フェルメールの代表作「真珠の耳飾りの少女」が来日。会期は8月21日〜9月27日。",
+    sourceUrl: "https://nakka-art.jp/#vermeer-2026",
+  },
+  {
+    title: "大絶滅展ー生命史のビッグファイブ（大阪市立自然史博物館）",
+    occurrences: [{ start: "2026-07-17T09:30:00+09:00", end: "2026-10-12T17:00:00+09:00" }],
+    venue: { name: "大阪市立自然史博物館", address: "大阪府大阪市東住吉区長居公園1-23", region: "大阪府" },
+    categoryName: "博物館",
+    description: "生命史における5度の大量絶滅をたどる特別展。会期は7月17日〜10月12日。",
+    sourceUrl: "https://www.mus-nh.city.osaka.jp/#daizetsumetsu-2026",
+  },
 ];
 
 async function findOrCreateVenue(v?: Curated["venue"]) {
