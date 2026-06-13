@@ -483,18 +483,42 @@ const CURATED: Curated[] = [
     sourceUrl: "https://www.aichi-nagoya2026.org/#2026",
   },
 
-  // ── 競馬（JRA G1・秋〜年末）──
+  // ── 競馬（JRA 秋のG1。日程はJRA公式の2026年G1一覧に準拠）──
+  {
+    title: "秋華賞",
+    occurrences: [{ start: "2026-10-18T15:40:00+09:00" }],
+    venue: { name: "京都競馬場", address: "京都府京都市伏見区葭島渡場島町32", region: "京都府" },
+    categoryName: "競馬",
+    description: "3歳牝馬三冠の最終戦GⅠ（芝2000m）。",
+    sourceUrl: "https://www.jra.go.jp/keiba/g1/#shuka-2026",
+  },
+  {
+    title: "菊花賞",
+    occurrences: [{ start: "2026-10-25T15:40:00+09:00" }],
+    venue: { name: "京都競馬場", address: "京都府京都市伏見区葭島渡場島町32", region: "京都府" },
+    categoryName: "競馬",
+    description: "3歳牡馬クラシック最後の一冠、最長距離のGⅠ（芝3000m）。",
+    sourceUrl: "https://www.jra.go.jp/keiba/g1/#kikka-2026",
+  },
   {
     title: "天皇賞（秋）",
-    occurrences: [{ start: "2026-11-15T15:40:00+09:00" }],
+    occurrences: [{ start: "2026-11-01T15:40:00+09:00" }],
     venue: { name: "東京競馬場", address: "東京都府中市日吉町1-1", region: "東京都" },
     categoryName: "競馬",
     description: "秋古馬中距離の頂点を決めるGⅠ（芝2000m）。",
     sourceUrl: "https://www.jra.go.jp/keiba/g1/akiten.html#2026",
   },
   {
+    title: "エリザベス女王杯",
+    occurrences: [{ start: "2026-11-15T15:40:00+09:00" }],
+    venue: { name: "京都競馬場", address: "京都府京都市伏見区葭島渡場島町32", region: "京都府" },
+    categoryName: "競馬",
+    description: "牝馬の頂点を争う秋のGⅠ（芝2200m）。",
+    sourceUrl: "https://www.jra.go.jp/keiba/g1/#elizabeth-2026",
+  },
+  {
     title: "マイルチャンピオンシップ",
-    occurrences: [{ start: "2026-11-29T15:40:00+09:00" }],
+    occurrences: [{ start: "2026-11-22T15:40:00+09:00" }],
     venue: { name: "京都競馬場", address: "京都府京都市伏見区葭島渡場島町32", region: "京都府" },
     categoryName: "競馬",
     description: "秋のマイル王決定戦GⅠ（芝1600m）。",
@@ -502,11 +526,19 @@ const CURATED: Curated[] = [
   },
   {
     title: "ジャパンカップ",
-    occurrences: [{ start: "2026-12-06T15:40:00+09:00" }],
+    occurrences: [{ start: "2026-11-29T15:40:00+09:00" }],
     venue: { name: "東京競馬場", address: "東京都府中市日吉町1-1", region: "東京都" },
     categoryName: "競馬",
     description: "世界の強豪が集う国際GⅠ（芝2400m）。",
     sourceUrl: "https://www.jra.go.jp/datafile/seiseki/replay/2026/g1.html#japan-cup",
+  },
+  {
+    title: "チャンピオンズカップ",
+    occurrences: [{ start: "2026-12-06T15:40:00+09:00" }],
+    venue: { name: "中京競馬場", address: "愛知県豊明市間米町敷田1225", region: "愛知県" },
+    categoryName: "競馬",
+    description: "ダート日本一を決める師走のGⅠ（ダート1800m）。",
+    sourceUrl: "https://www.jra.go.jp/keiba/g1/#champions-2026",
   },
   {
     title: "ホープフルステークス",
