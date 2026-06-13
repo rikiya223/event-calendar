@@ -331,6 +331,28 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </div>
         )}
 
+        {/* 絞り込み結果（カテゴリ/地域フィルタ時、カレンダーの上に日付順カルーセルで表示）*/}
+        {isFiltering && (
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-on-surface">
+                絞り込み結果
+                <span className="ml-1 text-sm font-normal text-outline">（{filteredList.length}件・日付順）</span>
+              </h3>
+              <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
+            </div>
+            {filteredList.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">この条件で開催予定のイベントはありません。</p>
+            ) : (
+              <Carousel>
+                {filteredList.map((occ) => (
+                  <CarouselCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
+                ))}
+              </Carousel>
+            )}
+          </section>
+        )}
+
         {q ? (
           <SearchResults q={q} results={searchResults} resolveColor={resolveColor} catById={catById} clearHref={hrefFor({ view, date: selected, cat: activeCat, q: null, region })} from={backHref} />
         ) : view === "month" ? (
@@ -462,27 +484,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           <DayList days={days} byDay={byDay} todayKey={todayKey} resolveColor={resolveColor} catById={catById} from={backHref} />
         )}
 
-        {/* 絞り込み結果（カテゴリ/地域フィルタ時、該当イベントを日付順に一覧表示）*/}
-        {isFiltering && (
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-on-surface">
-                絞り込み結果
-                <span className="ml-1 text-sm font-normal text-outline">（{filteredList.length}件・日付順）</span>
-              </h3>
-              <Link href={hrefFor({ view, date: selected })} className="text-sm font-semibold text-primary hover:underline">解除</Link>
-            </div>
-            {filteredList.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">この条件で開催予定のイベントはありません。</p>
-            ) : (
-              <Carousel>
-                {filteredList.map((occ) => (
-                  <CarouselCard key={occ.id} occ={occ} resolveColor={resolveColor} catById={catById} from={backHref} />
-                ))}
-              </Carousel>
-            )}
-          </section>
-        )}
       </div>
     </main>
   );
