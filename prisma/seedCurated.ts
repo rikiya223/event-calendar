@@ -605,7 +605,7 @@ const CURATED: Curated[] = [
     sourceUrl: "https://www.rugby-japan.jp/#sco-2026",
   },
 
-  // ── 同人・即売会 ──
+  // ── 同人・即売会・ホビーイベント ──
   {
     title: "文学フリマ東京43",
     occurrences: [{ start: "2026-11-08T12:00:00+09:00", end: "2026-11-08T17:00:00+09:00" }],
@@ -613,6 +613,71 @@ const CURATED: Curated[] = [
     categoryName: "その他",
     description: "文学作品の展示即売会。プロ・アマ問わず多彩な“文学”が並ぶ。11月8日開催。",
     sourceUrl: "https://bunfree.net/event/tokyo43/",
+  },
+  {
+    title: "東京コミコン2026",
+    occurrences: [{ start: "2026-12-11T10:00:00+09:00", end: "2026-12-13T18:00:00+09:00" }],
+    venue: { name: "幕張メッセ", address: "千葉県千葉市美浜区中瀬2-1", region: "千葉県" },
+    categoryName: "その他",
+    description: "映画・アメコミ・ホビーの祭典。海外セレブのゲストも登壇。12月11〜13日。",
+    sourceUrl: "https://tokyocomiccon.jp/#2026",
+  },
+
+  // ── テニス・バスケ ──
+  {
+    title: "木下グループ ジャパンオープンテニス2026",
+    occurrences: [{ start: "2026-09-30T11:00:00+09:00", end: "2026-10-06T21:00:00+09:00" }],
+    venue: { name: "有明コロシアム", address: "東京都江東区有明2-2-22", region: "東京都" },
+    categoryName: "テニス",
+    description: "日本唯一のATPツアー大会（旧・楽天ジャパンオープン）。本戦は9月30日〜10月6日。",
+    sourceUrl: "https://www.japanopentennis.com/atp/#2026",
+  },
+  {
+    title: "B.LEAGUE 2026-27 開幕戦",
+    occurrences: [{ start: "2026-09-22T19:05:00+09:00" }],
+    categoryName: "バスケ",
+    description: "リーグ刷新「B.革新」初年度の開幕。開幕カードはアルバルク東京 vs 琉球ゴールデンキングス。",
+    sourceUrl: "https://www.bleague.jp/opening2026-27/#2026",
+  },
+
+  // ── 音楽フェス（ロッキン）──
+  {
+    title: "ROCK IN JAPAN FESTIVAL 2026",
+    // 2週末・計5日間（9/12,13 / 9/19,20,21）
+    occurrences: [
+      { start: "2026-09-12T11:00:00+09:00" },
+      { start: "2026-09-13T11:00:00+09:00" },
+      { start: "2026-09-19T11:00:00+09:00" },
+      { start: "2026-09-20T11:00:00+09:00" },
+      { start: "2026-09-21T11:00:00+09:00" },
+    ],
+    venue: { name: "千葉市蘇我スポーツ公園", region: "千葉県" },
+    categoryName: "フェス",
+    description: "国内最大級のロックフェス。9月の2週末・計5日間で約115組が出演。",
+    sourceUrl: "https://rijfes.jp/2026/#fes",
+  },
+
+  // ── ゲーム発売日（2026.6.9 ニンテンドーダイレクト発表分ほか）──
+  {
+    title: "ファイナルファンタジー レゾナンス 発売",
+    occurrences: [{ start: "2026-10-22T00:00:00+09:00" }],
+    categoryName: "発売日",
+    description: "FF初のHD-2D作品。Switch2／PS5ほかで発売。",
+    sourceUrl: "https://www.jp.square-enix.com/#ff-resonance-2026",
+  },
+  {
+    title: "地球防衛軍5（Nintendo Switch 2）発売",
+    occurrences: [{ start: "2026-10-08T00:00:00+09:00" }],
+    categoryName: "発売日",
+    description: "人気3DアクションシューティングのSwitch 2版。",
+    sourceUrl: "https://www.d3p.co.jp/#edf5-switch2-2026",
+  },
+  {
+    title: "東方紅魔郷：New Classic 発売",
+    occurrences: [{ start: "2026-09-10T00:00:00+09:00" }],
+    categoryName: "発売日",
+    description: "「東方Project」第6作のリメイク。各機種で発売。",
+    sourceUrl: "manual:game:touhou-koumakyou-newclassic-2026",
   },
 ];
 
