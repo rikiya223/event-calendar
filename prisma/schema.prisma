@@ -1,0 +1,204 @@
+// イベントカレンダー — データモデル（MVP）
+// 仕様書 5章 をベースに、設計上の論点を解消して確定したスキーマ。
+//
+// 確定した設計判断（詳細は docs/DESIGN.md）:
+//  - 日時は EventOccurrence（開催回）に一本化する。Event 側には starts_at/ends_at を持たせない。
+//    → 単発イベントでも「開催回1件」を作る。カレンダー表示は必ず EventOccurrence を引く。
+//  - 色（colorKey）は大分類カテゴリのみが持つ。中分類以下は parentId をたどって親の色を継承。
+//  - events（統合済み正規レコード）と event_sources（ソース生データ）は 1対多 で分離。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // 実行時：プール経由（pgbouncer）
+  directUrl = env("DIRECT_URL") // マイグレーション時：直結（Supabase推奨）
+}
+
+// ── 列挙型 ─────────────────────────────────────────────
+
+enum EventStatus {
+  PUBLISHED // 公開
+  PENDING_REVIEW // 審査待ち
+  REJECTED // 却下
+}
+
+enum SourceType {
+  OFFICIAL_API // 公式API（信頼度：高）
+  SCRAPING // スクレイピング（中）
+  AI_AGENT // AIエージェント収集（低）
+  USER // ユーザー投稿（低）
+  MANUAL // 管理画面からの手動登録
+}
+
+enum SubmissionStatus {
+  PENDING // 審査待ち
+  APPROVED // 承認済み（event に反映済み）
+  REJECTED // 却下
+}
+
+// ── イベント（統合済みの正規レコード）─────────────────────
+
+model Event {
+  id              String      @id @default(uuid()) @db.Uuid
+  canonicalTitle  String // 正規版タイトル
+  description     String?     @db.Text // 説明文（将来はAI要約・リライト後）
+  confidenceScore Int         @default(0) // 信頼度スコア（自動公開／審査の判定に使用）
+  status          EventStatus @default(PENDING_REVIEW)
+
+  venueId String? @db.Uuid
+  venue   Venue?  @relation(fields: [venueId], references: [id])
+
+  occurrences     EventOccurrence[] // 開催回（1イベント＝複数日程）
+  sources         EventSource[] // 取得元の生データ
+  eventCategories EventCategory[] // ⇔ カテゴリ（多対多）
+  eventPerformers EventPerformer[] // ⇔ 出演者（多対多）
+  bookmarks       Bookmark[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ── 開催回（日時の唯一の保持先）──────────────────────────
+
+model EventOccurrence {
+  id      String @id @default(uuid()) @db.Uuid
+  eventId String @db.Uuid
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  startsAt DateTime
+  endsAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  // カレンダー表示は startsAt 範囲で引くため、日付インデックスを必須とする（名寄せSTEP1にも効く）
+  @@index([startsAt])
+  @@index([eventId])
+}
+
+// ── ソース（各取得元の生データ）──────────────────────────
+
+model EventSource {
+  id      String @id @default(uuid()) @db.Uuid
+  eventId String @db.Uuid
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  sourceType  SourceType
+  sourceUrl   String?
+  rawPayload  Json? // 再処理用に生データを保持
+  trustWeight Int    @default(0) // このソースの信頼度の重み
+
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+// ── カテゴリ（親子構造・自己参照）────────────────────────
+
+model Category {
+  id       String  @id @default(uuid()) @db.Uuid
+  parentId String? @db.Uuid
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+
+  name     String
+  colorKey String? // 色キー（大分類のみ保持。中分類以下は null → 親をたどる）
+  icon     String?
+
+  eventCategories EventCategory[]
+
+  @@index([parentId])
+}
+
+// ── 会場 ───────────────────────────────────────────────
+
+model Venue {
+  id      String  @id @default(uuid()) @db.Uuid
+  name    String
+  address String?
+  region  String? // 都道府県（地域フィルター用）
+  lat     Float?
+  lng     Float?
+
+  events Event[]
+
+  @@index([region])
+}
+
+// ── 出演者・チーム ─────────────────────────────────────
+
+model Performer {
+  id   String @id @default(uuid()) @db.Uuid
+  name String // アーティスト名・球団名など
+  type String // 種別（artist / team / ...）
+
+  eventPerformers EventPerformer[]
+}
+
+// ── ユーザー関連 ───────────────────────────────────────
+
+model User {
+  id          String  @id @default(uuid()) @db.Uuid
+  email       String  @unique
+  displayName String?
+
+  bookmarks   Bookmark[]
+  submissions EventSubmission[]
+
+  createdAt DateTime @default(now())
+}
+
+model Bookmark {
+  id      String @id @default(uuid()) @db.Uuid
+  userId  String @db.Uuid
+  eventId String @db.Uuid
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId]) // 同じイベントを二重ブックマークさせない
+}
+
+model EventSubmission {
+  id     String           @id @default(uuid()) @db.Uuid
+  userId String?          @db.Uuid
+  user   User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status SubmissionStatus @default(PENDING)
+  payload Json // 投稿内容（タイトル・日時・会場など）
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
+
+// ── 多対多の中間テーブル ───────────────────────────────
+
+model EventCategory {
+  eventId    String @db.Uuid
+  categoryId String @db.Uuid
+
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, categoryId])
+  @@index([categoryId])
+}
+
+model EventPerformer {
+  eventId     String  @db.Uuid
+  performerId String  @db.Uuid
+  role        String? // 役割（主演・対戦相手など、任意）
+
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  performer Performer @relation(fields: [performerId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, performerId])
+  @@index([performerId])
+}
