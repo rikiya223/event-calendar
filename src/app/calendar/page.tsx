@@ -522,10 +522,14 @@ function DayPanelCard({ occ, resolveColor, catById, from, dayKey }: { occ: Occ; 
   const ongoing = multiDay && !!dayKey && dayKey !== startKey;
   const endLabel = occ.endsAt ? `${jstParts(occ.endsAt).m + 1}/${jstParts(occ.endsAt).d}` : "";
   return (
-    <Link href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`} className="group block rounded-xl border border-outline-variant/10 bg-surface-container-low p-3 transition hover:border-primary/50">
+    <Link
+      href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`}
+      className="group relative block overflow-hidden rounded-xl border border-black/5 bg-white p-3 pl-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} aria-hidden />
       <div className="mb-1.5 flex items-start justify-between gap-2">
         {cat ? (
-          <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-on-surface-variant" style={{ backgroundColor: `${color}26` }}>
+          <span className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-slate-700" style={{ backgroundColor: `${color}26` }}>
             {catById.get(cat.categoryId)?.name ?? ""}
           </span>
         ) : <span />}
@@ -536,7 +540,7 @@ function DayPanelCard({ occ, resolveColor, catById, from, dayKey }: { occ: Occ; 
             <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">初日 〜{endLabel}</span>
           )
         ) : (
-          <span className="shrink-0 text-[11px] font-medium text-on-surface-variant">
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-on-surface-variant">
             {formatJstTime(occ.startsAt)}{occ.endsAt ? `–${formatJstTime(occ.endsAt)}` : ""}
           </span>
         )}
@@ -544,7 +548,7 @@ function DayPanelCard({ occ, resolveColor, catById, from, dayKey }: { occ: Occ; 
       <h4 className="font-bold leading-snug text-on-surface transition-colors group-hover:text-primary">{occ.event.canonicalTitle}</h4>
       {occ.event.venue && (
         <div className="mt-1.5 flex items-center gap-1 text-on-surface-variant">
-          <Icon name="location_on" className="text-[16px]" />
+          <Icon name="location_on" className="text-[15px] text-outline" />
           <span className="truncate text-xs">{occ.event.venue.name}</span>
         </div>
       )}
@@ -628,27 +632,27 @@ function UpcomingCard({ occ, resolveColor, catById, from }: { occ: Occ; resolveC
   const color = cat ? resolveColor(cat.categoryId) : colorForKey(null);
   const ongoing = isOngoing(occ);
   return (
-    <Link href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`} className="group flex items-center gap-4 rounded-2xl border border-outline-variant/30 bg-white p-3 transition hover:border-primary/30 hover:shadow-md">
-      {ongoing ? (
-        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50">
-          <span className="text-center text-[12px] font-bold leading-tight text-amber-600">開催<br />中</span>
-        </div>
-      ) : (
-        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-high transition group-hover:bg-primary-fixed-dim">
-          <span className="text-xl font-bold leading-none text-primary">{p.d}</span>
-          <span className="mt-1 text-[10px] font-bold tracking-widest text-outline group-hover:text-primary">{p.m + 1}月</span>
-        </div>
-      )}
+    <Link href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`} className="group flex items-center gap-3.5 rounded-2xl border border-black/5 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl" style={{ backgroundColor: `${color}26` }}>
+        {ongoing ? (
+          <span className="text-center text-[11px] font-bold leading-tight text-slate-700">開催<br />中</span>
+        ) : (
+          <>
+            <span className="text-2xl font-bold leading-none text-slate-800">{p.d}</span>
+            <span className="mt-0.5 text-[10px] font-bold tracking-widest text-slate-500">{p.m + 1}月</span>
+          </>
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         {cat && (
-          <span className="mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-on-surface-variant" style={{ backgroundColor: `${color}26` }}>
+          <span className="mb-1 inline-block rounded-md px-2 py-0.5 text-[10px] font-semibold text-slate-700" style={{ backgroundColor: `${color}26` }}>
             {catById.get(cat.categoryId)?.name ?? ""}
           </span>
         )}
         <h4 className="truncate font-bold text-on-surface transition-colors group-hover:text-primary">{occ.event.canonicalTitle}</h4>
         <div className="mt-0.5 flex items-center gap-3 text-on-surface-variant">
-          <span className="flex items-center gap-1 text-xs"><Icon name="schedule" className="text-[15px]" />{ongoing ? `${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}</span>
-          {occ.event.venue && <span className="flex items-center gap-1 truncate text-xs"><Icon name="location_on" className="text-[15px]" />{occ.event.venue.name}</span>}
+          <span className="flex items-center gap-1 text-xs tabular-nums"><Icon name="schedule" className="text-[15px] text-outline" />{ongoing ? `${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}</span>
+          {occ.event.venue && <span className="flex items-center gap-1 truncate text-xs"><Icon name="location_on" className="text-[15px] text-outline" />{occ.event.venue.name}</span>}
         </div>
       </div>
     </Link>
