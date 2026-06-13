@@ -58,7 +58,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-full">
-        <div className="mx-auto flex w-full max-w-7xl">
+        <div className="flex w-full max-w-7xl">
           <Sidebar email={user?.email} admin={admin} />
           <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-20 lg:pb-0">
             <Header />

@@ -9,9 +9,8 @@ export function BottomNav({ loggedIn }: { loggedIn: boolean }) {
   const pathname = usePathname();
 
   const items = [
-    { href: "/", label: "ホーム", icon: "home", exact: true },
-    { href: "/explore", label: "さがす", icon: "search" },
     { href: "/calendar", label: "カレンダー", icon: "calendar_today" },
+    { href: "/explore", label: "さがす", icon: "search" },
     loggedIn
       ? { href: "/mypage", label: "マイページ", icon: "person" }
       : { href: "/login", label: "ログイン", icon: "person" },
@@ -21,7 +20,7 @@ export function BottomNav({ loggedIn }: { loggedIn: boolean }) {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant/20 bg-surface/90 shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur-lg lg:hidden">
       <ul className="flex items-stretch">
         {items.map((it) => {
-          const active = it.exact ? pathname === it.href : pathname.startsWith(it.href);
+          const active = pathname.startsWith(it.href);
           return (
             <li key={it.href} className="flex-1">
               <Link

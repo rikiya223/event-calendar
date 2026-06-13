@@ -15,15 +15,14 @@ export async function Sidebar({ email, admin }: { email?: string | null; admin: 
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-outline-variant/30 bg-surface-container-low px-4 py-6 lg:flex">
-      <Link href="/" className="mb-7 flex items-center gap-2.5 px-2">
+      <Link href="/calendar" className="mb-7 flex items-center gap-2.5 px-2">
         <Icon name="event_note" className="text-[26px] text-primary" />
         <span className="text-lg font-bold tracking-tight text-primary">EventCalendar JP</span>
       </Link>
 
       <nav className="flex flex-col gap-1">
-        <NavLink href="/" icon="home" label="ホーム" exact />
-        <NavLink href="/explore" icon="search" label="さがす" />
         <NavLink href="/calendar" icon="calendar_today" label="カレンダー" />
+        <NavLink href="/explore" icon="search" label="さがす" />
         <NavLink href="/submit" icon="add_circle" label="投稿する" />
         <NavLink href="/mypage" icon="person" label="マイページ" />
         {admin && <NavLink href="/admin" icon="build" label="管理" />}

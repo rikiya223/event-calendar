@@ -6,7 +6,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-outline-variant/30 bg-surface/80 backdrop-blur-md lg:hidden">
       <div className="flex items-center justify-between px-4 py-2.5">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/calendar" className="flex items-center gap-2">
           <Icon name="event_note" className="text-[22px] text-primary" />
           <span className="text-base font-bold tracking-tight text-primary">EventCalendar JP</span>
         </Link>
