@@ -11,11 +11,16 @@ export const metadata = { title: "さがす" };
 // 大分類 → Material Symbols アイコン
 const CAT_ICON: Record<string, string> = {
   スポーツ: "sports_soccer",
-  "音楽・ライブ": "music_note",
-  "展覧会・美術館": "palette",
-  "映画・エンタメ": "movie",
-  "ゲーム・発売日": "sports_esports",
-  "祝日・カレンダー行事": "celebration",
+  音楽: "music_note",
+  "アート・展示": "palette",
+  エンタメ: "movie",
+  ゲーム: "sports_esports",
+  "アニメ・マンガ": "animation",
+  グルメ: "restaurant",
+  "季節・行事": "celebration",
+  "賞・式典": "emoji_events",
+  "学び・ビジネス": "school",
+  "暮らし・地域": "home",
   その他: "category",
 };
 const POPULAR_TAGS = ["ライブ", "美術展", "サッカー", "フェス", "公開日"];

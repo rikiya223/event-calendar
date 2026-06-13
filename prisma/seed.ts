@@ -23,7 +23,7 @@ const CATEGORY_TREE: {
     ],
   },
   {
-    name: "音楽・ライブ",
+    name: "音楽",
     colorKey: "pink",
     icon: "🎵",
     children: [
@@ -32,7 +32,7 @@ const CATEGORY_TREE: {
     ],
   },
   {
-    name: "展覧会・美術館",
+    name: "アート・展示",
     colorKey: "amber",
     icon: "🖼️",
     children: [
@@ -41,7 +41,7 @@ const CATEGORY_TREE: {
     ],
   },
   {
-    name: "映画・エンタメ",
+    name: "エンタメ",
     colorKey: "red",
     icon: "🎬",
     children: [
@@ -50,13 +50,13 @@ const CATEGORY_TREE: {
     ],
   },
   {
-    name: "ゲーム・発売日",
+    name: "ゲーム",
     colorKey: "lime",
     icon: "🎮",
     children: ["発売日", "アップデート", "eスポーツ", "ゲームイベント", "ボードゲーム・TRPG", "レトロゲーム", "その他ゲーム"],
   },
   {
-    name: "アニメ・サブカル",
+    name: "アニメ・マンガ",
     colorKey: "indigo",
     icon: "🎨",
     children: [
@@ -65,19 +65,25 @@ const CATEGORY_TREE: {
     ],
   },
   {
-    name: "グルメ・フード",
+    name: "グルメ",
     colorKey: "orange",
     icon: "🍴",
     children: ["フードフェス", "物産展", "グルメイベント", "ビアガーデン", "酒・ワイン", "スイーツ", "マルシェ・市", "ポップアップ", "その他グルメ"],
   },
   {
-    name: "祝日・カレンダー行事",
+    name: "季節・行事",
     colorKey: "purple",
     icon: "📅",
     children: [
-      "祝日", "記念日", "季節行事", "祭り", "花火", "盆踊り", "桜・花見", "紅葉",
-      "イルミネーション", "クリスマスマーケット", "初詣・初日の出", "節分・節句", "表彰・賞レース", "その他行事",
+      "祭り", "花火", "盆踊り", "季節行事", "桜・花見", "紅葉", "イルミネーション",
+      "クリスマスマーケット", "初詣・初日の出", "節分・節句", "祝日", "記念日", "その他行事",
     ],
+  },
+  {
+    name: "賞・式典",
+    colorKey: "fuchsia",
+    icon: "🏆",
+    children: ["表彰・賞レース", "授賞式", "式典・記念式", "選挙"],
   },
   {
     name: "学び・ビジネス",

@@ -11,6 +11,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   orange: "#fdba74", // グルメ・フード
   teal: "#5eead4", // 学び・ビジネス
   rose: "#fda4af", // 暮らし・地域
+  fuchsia: "#f0abfc", // 賞・式典
   slate: "#cbd5e1", // その他
 };
 
