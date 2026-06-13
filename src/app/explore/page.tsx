@@ -233,17 +233,18 @@ export default async function ExplorePage({
                 const color = o.event.eventCategories[0]
                   ? resolveColor(o.event.eventCategories[0].categoryId)
                   : colorForKey(null);
+                const ongoing = isOngoing(o);
                 return (
                   <Link key={o.id} href={`/events/${o.event.id}?from=${encodeURIComponent(fromHref)}`} className="group flex gap-3">
                     <span
                       className="grid h-16 w-16 shrink-0 place-items-center rounded-xl text-white"
-                      style={{ backgroundColor: color }}
+                      style={{ backgroundColor: ongoing ? "#f59e0b" : color }}
                     >
-                      <Icon name="event" className="text-[22px]" />
+                      <Icon name={ongoing ? "bolt" : "event"} className="text-[22px]" />
                     </span>
                     <div className="flex flex-col justify-center">
-                      <p className="text-[11px] font-bold uppercase text-primary">
-                        {p.m + 1}月{p.d}日
+                      <p className={`text-[11px] font-bold uppercase ${ongoing ? "text-amber-600" : "text-primary"}`}>
+                        {ongoing ? `開催中 〜${endLabel(o.endsAt)}` : `${p.m + 1}月${p.d}日`}
                       </p>
                       <h4 className="line-clamp-1 text-sm font-semibold text-on-surface group-hover:text-primary">
                         {o.event.canonicalTitle}

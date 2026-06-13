@@ -34,6 +34,7 @@ async function handle(req: NextRequest) {
         sourceName: f.name,
         categoryName: f.category,
         publish: f.publish ?? true,
+        includeDescription: f.includeDescription,
       });
       ical.push({ name: f.name, result });
     } catch (e) {

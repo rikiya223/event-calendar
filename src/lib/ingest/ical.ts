@@ -90,6 +90,7 @@ export async function ingestIcal(opts: {
   sourceName: string;
   categoryName?: string;
   publish?: boolean; // true=公開、false=審査待ち（既定: true）
+  includeDescription?: boolean; // false=説明文を保存しない（著作権配慮。既定: true）
 }): Promise<IngestResult> {
   const res = await fetch(opts.url, { cache: "no-store", headers: { "User-Agent": "EventCalendar/1.0" } });
   if (!res.ok) throw new Error(`iCalの取得に失敗しました (HTTP ${res.status})`);
@@ -116,14 +117,20 @@ export async function ingestIcal(opts: {
     await Promise.all(
       toCreate.slice(i, i + CONCURRENCY).map(async (ev) => {
         const venue = ev.location ? await findOrCreateVenue(ev.location) : null;
+        // 終日/公開日のiCal慣習（DTEND=翌0時）は単日として扱い、会期中表示を防ぐ
+        let end = ev.end;
+        if (end) {
+          const endIsJstMidnight = (end.getTime() + 9 * 3_600_000) % 86_400_000 === 0;
+          if (endIsJstMidnight && end.getTime() - ev.start.getTime() <= 86_400_000) end = null;
+        }
         await prisma.event.create({
           data: {
             canonicalTitle: ev.summary,
-            description: ev.description,
+            description: opts.includeDescription === false ? null : ev.description,
             status,
             confidenceScore: 70,
             venueId: venue?.id ?? null,
-            occurrences: { create: { startsAt: ev.start, endsAt: ev.end } },
+            occurrences: { create: { startsAt: ev.start, endsAt: end } },
             sources: {
               create: {
                 sourceType: "OFFICIAL_API",
