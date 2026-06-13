@@ -9,7 +9,6 @@ import {
   shiftAnchor,
   parseDateParam,
   todayJst,
-  addDays,
   ymdKey,
   jstDayKey,
   jstParts,
@@ -81,25 +80,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const activeCat = sp.cat ?? null;
   const q = (sp.q ?? "").trim();
   const region = sp.region ?? null;
-
-  // クイック期間フィルタ（今日／今週末／今月／来月）。カテゴリ・地域は引き継ぐ。
-  const todayYmd = todayJst();
-  const todayUtc = jstMidnightUtc(todayYmd.y, todayYmd.m, todayYmd.d);
-  const sat = jstParts(addDays(todayUtc, (6 - jstParts(todayUtc).weekday + 7) % 7)); // 直近の土曜
-  const weekendYmd = { y: sat.y, m: sat.m, d: sat.d };
-  const thisMonthYmd = { y: todayYmd.y, m: todayYmd.m, d: 1 };
-  const nm = jstParts(jstMidnightUtc(todayYmd.y, todayYmd.m + 1, 1));
-  const nextMonthYmd = { y: nm.y, m: nm.m, d: 1 };
-  const weekStartKey = (ymd: Ymd) => {
-    const u = jstMidnightUtc(ymd.y, ymd.m, ymd.d);
-    return jstDayKey(addDays(u, -jstParts(u).weekday));
-  };
-  const quickFilters = [
-    { label: "今日", active: view === "day" && paramFor(selected) === paramFor(todayYmd), href: hrefFor({ view: "day", date: todayYmd, cat: activeCat, region }) },
-    { label: "今週末", active: view === "week" && weekStartKey(selected) === weekStartKey(weekendYmd), href: hrefFor({ view: "week", date: weekendYmd, cat: activeCat, region }) },
-    { label: "今月", active: view === "month" && selected.y === thisMonthYmd.y && selected.m === thisMonthYmd.m, href: hrefFor({ view: "month", date: thisMonthYmd, cat: activeCat, region }) },
-    { label: "来月", active: view === "month" && selected.y === nextMonthYmd.y && selected.m === nextMonthYmd.m, href: hrefFor({ view: "month", date: nextMonthYmd, cat: activeCat, region }) },
-  ];
 
   // 都道府県候補・カテゴリ・カテゴリ使用状況は互いに独立なので並列取得（DB往復を1波に）
   const [regionRows, allCategories, usedCatRows] = await Promise.all([
@@ -272,16 +252,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               })}
             </div>
           </div>
-        </div>
-
-        {/* クイック期間フィルタ */}
-        <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-on-surface-variant">
-            <Icon name="bolt" className="text-[16px]" />期間
-          </span>
-          {quickFilters.map((f) => (
-            <Pill key={f.label} href={f.href} active={f.active}>{f.label}</Pill>
-          ))}
         </div>
 
         {/* カテゴリピル（大分類） */}
