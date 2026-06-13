@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
 import { categoryIcon } from "@/lib/categoryIcons";
-import { todayJst, jstMidnightUtc, jstParts, formatJstTime } from "@/lib/calendar";
+import { jstParts, formatJstTime } from "@/lib/calendar";
+import { activeOccurrenceFilter, isOngoing, endLabel, dedupeByEvent } from "@/lib/eventStatus";
 import { Icon } from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +24,17 @@ export default async function Home() {
     return colorForKey(cur?.colorKey);
   }
 
-  const today = todayJst();
-  const upcoming = await prisma.eventOccurrence.findMany({
-    where: { startsAt: { gte: jstMidnightUtc(today.y, today.m, today.d) }, event: { status: "PUBLISHED" } },
-    orderBy: { startsAt: "asc" },
-    take: 6,
-    include: { event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } } },
-  });
+  // 終了したイベントは除外し、開催中（会期中）のものは含める。
+  // 多めに取得してイベント単位で重複排除（大相撲など多数の開催回を1件に）。
+  const upcoming = dedupeByEvent(
+    await prisma.eventOccurrence.findMany({
+      where: { ...activeOccurrenceFilter(), event: { status: "PUBLISHED" } },
+      orderBy: { startsAt: "asc" },
+      take: 40,
+      include: { event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } } },
+    }),
+    6,
+  );
 
   return (
     <main className="px-4 py-6 lg:px-8">
@@ -107,21 +112,28 @@ export default async function Home() {
                 const p = jstParts(occ.startsAt);
                 const cat = occ.event.eventCategories[0];
                 const color = cat ? resolveColor(cat.categoryId) : colorForKey(null);
+                const ongoing = isOngoing(occ);
                 return (
                   <Link
                     key={occ.id}
                     href={`/events/${occ.event.id}?from=/`}
                     className="group flex gap-3 rounded-2xl border border-outline-variant/30 bg-white p-3 transition hover:-translate-y-px hover:border-primary/40 hover:shadow-md"
                   >
-                    <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-high">
-                      <span className="text-xl font-bold leading-none text-primary">{p.d}</span>
-                      <span className="mt-1 text-[10px] font-bold tracking-widest text-outline">{p.m + 1}月</span>
+                    <div className={`flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border ${ongoing ? "border-amber-200 bg-amber-50" : "border-outline-variant/20 bg-surface-container-high"}`}>
+                      {ongoing ? (
+                        <span className="text-center text-[11px] font-bold leading-tight text-amber-600">開催<br />中</span>
+                      ) : (
+                        <>
+                          <span className="text-xl font-bold leading-none text-primary">{p.d}</span>
+                          <span className="mt-1 text-[10px] font-bold tracking-widest text-outline">{p.m + 1}月</span>
+                        </>
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="mb-1 inline-block h-1.5 w-8 rounded-full" style={{ backgroundColor: color }} />
                       <h3 className="truncate font-bold text-on-surface transition-colors group-hover:text-primary">{occ.event.canonicalTitle}</h3>
                       <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-on-surface-variant">
-                        <Icon name="schedule" className="text-[14px]" />{formatJstTime(occ.startsAt)}
+                        <Icon name="schedule" className="text-[14px]" />{ongoing ? `${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}
                         {occ.event.venue ? `　${occ.event.venue.name}` : ""}
                       </p>
                     </div>

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
-import { todayJst, jstMidnightUtc, jstParts, formatJstTime } from "@/lib/calendar";
+import { jstParts, formatJstTime } from "@/lib/calendar";
+import { activeOccurrenceFilter, isOngoing, endLabel, dedupeByEvent } from "@/lib/eventStatus";
 import { Icon } from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -59,24 +60,25 @@ export default async function ExplorePage({
   });
   const availableRegions = regionRows.map((r) => r.region!).filter(Boolean);
 
-  const today = todayJst();
-  const fromToday = jstMidnightUtc(today.y, today.m, today.d);
-
-  const upcoming = await prisma.eventOccurrence.findMany({
-    where: {
-      startsAt: { gte: fromToday },
-      event: {
-        status: "PUBLISHED",
-        ...(q ? { canonicalTitle: { contains: q, mode: "insensitive" } } : {}),
-        ...(region ? { venue: { region } } : {}),
+  // 終了したイベントは除外し、開催中（会期中）のものは含める。イベント単位で重複排除。
+  const upcoming = dedupeByEvent(
+    await prisma.eventOccurrence.findMany({
+      where: {
+        ...activeOccurrenceFilter(),
+        event: {
+          status: "PUBLISHED",
+          ...(q ? { canonicalTitle: { contains: q, mode: "insensitive" } } : {}),
+          ...(region ? { venue: { region } } : {}),
+        },
       },
-    },
-    orderBy: { startsAt: "asc" },
-    take: q ? 50 : 12,
-    include: {
-      event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } },
-    },
-  });
+      orderBy: { startsAt: "asc" },
+      take: q ? 120 : 40,
+      include: {
+        event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } },
+      },
+    }),
+    q ? 50 : 12,
+  );
 
   return (
     <main className="px-4 py-6 lg:px-8">
@@ -299,19 +301,26 @@ function EventRow({
   const color = occ.event.eventCategories[0]
     ? resolveColor(occ.event.eventCategories[0].categoryId)
     : colorForKey(null);
+  const ongoing = isOngoing(occ);
   return (
     <li>
       <Link
         href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`}
         className="flex gap-3 rounded-2xl border border-outline-variant/30 bg-white p-3 transition hover:-translate-y-px hover:border-primary/40 hover:shadow-md"
       >
-        <div
-          className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl py-1"
-          style={{ backgroundColor: `${color}24` }}
-        >
-          <span className="text-[10px] font-semibold text-on-surface-variant">{p.m + 1}月</span>
-          <span className="text-lg font-bold leading-none text-on-surface">{p.d}</span>
-        </div>
+        {ongoing ? (
+          <div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-amber-50 py-1">
+            <span className="text-center text-[10px] font-bold leading-tight text-amber-600">開催<br />中</span>
+          </div>
+        ) : (
+          <div
+            className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl py-1"
+            style={{ backgroundColor: `${color}24` }}
+          >
+            <span className="text-[10px] font-semibold text-on-surface-variant">{p.m + 1}月</span>
+            <span className="text-lg font-bold leading-none text-on-surface">{p.d}</span>
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           {occ.event.eventCategories.length > 0 && (
             <div className="mb-0.5 flex flex-wrap gap-1">
@@ -328,7 +337,7 @@ function EventRow({
           )}
           <p className="truncate font-semibold leading-snug text-on-surface">{occ.event.canonicalTitle}</p>
           <p className="mt-0.5 truncate text-xs text-outline">
-            🕘 {formatJstTime(occ.startsAt)}
+            🕘 {ongoing ? `${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}
             {occ.event.venue ? `　${occ.event.venue.name}` : ""}
           </p>
         </div>

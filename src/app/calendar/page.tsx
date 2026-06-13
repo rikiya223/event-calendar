@@ -18,6 +18,7 @@ import {
   formatJstDateLong,
   WEEKDAY_LABELS,
 } from "@/lib/calendar";
+import { activeOccurrenceFilter, isOngoing, endLabel, dedupeByEvent } from "@/lib/eventStatus";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "カレンダー" };
@@ -118,11 +119,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const { start, end, days } = buildRange(view, anchor);
 
   // 検索・近日開催・表示範囲の取得は互いに独立なので並列実行（直列の往復を1波に）
-  const [searchResults, upcoming, occurrences] = await Promise.all([
+  const [searchResults, upcomingRaw, occurrences] = await Promise.all([
     q ? loadOccurrences({ start: fromToday, end: farFuture, catScopeIds, q, region }) : Promise.resolve([] as Occ[]),
     prisma.eventOccurrence.findMany({
       where: {
-        startsAt: { gte: fromToday },
+        ...activeOccurrenceFilter(),
         event: {
           status: "PUBLISHED",
           ...(catScopeIds ? { eventCategories: { some: { categoryId: { in: catScopeIds } } } } : {}),
@@ -130,11 +131,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         },
       },
       orderBy: { startsAt: "asc" },
-      take: 6,
+      take: 40,
       include: occInclude,
     }),
     q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, catScopeIds, q, region }),
   ]);
+  // 近日開催はイベント単位で重複排除（大相撲など多数の開催回を1件に）
+  const upcoming = dedupeByEvent(upcomingRaw, 6);
   const byDay = new Map<string, Occ[]>();
   for (const occ of occurrences) {
     // 会期もの（複数日）は期間中の各日に乗せる。単日は開始日のみ。
@@ -467,12 +470,19 @@ function UpcomingCard({ occ, resolveColor, catById, from }: { occ: Occ; resolveC
   const p = jstParts(occ.startsAt);
   const cat = occ.event.eventCategories[0];
   const color = cat ? resolveColor(cat.categoryId) : colorForKey(null);
+  const ongoing = isOngoing(occ);
   return (
     <Link href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`} className="group flex items-center gap-4 rounded-2xl border border-outline-variant/30 bg-white p-3 transition hover:border-primary/30 hover:shadow-md">
-      <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-high transition group-hover:bg-primary-fixed-dim">
-        <span className="text-xl font-bold leading-none text-primary">{p.d}</span>
-        <span className="mt-1 text-[10px] font-bold tracking-widest text-outline group-hover:text-primary">{p.m + 1}月</span>
-      </div>
+      {ongoing ? (
+        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50">
+          <span className="text-center text-[12px] font-bold leading-tight text-amber-600">開催<br />中</span>
+        </div>
+      ) : (
+        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-outline-variant/20 bg-surface-container-high transition group-hover:bg-primary-fixed-dim">
+          <span className="text-xl font-bold leading-none text-primary">{p.d}</span>
+          <span className="mt-1 text-[10px] font-bold tracking-widest text-outline group-hover:text-primary">{p.m + 1}月</span>
+        </div>
+      )}
       <div className="min-w-0 flex-1">
         {cat && (
           <span className="mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-on-surface-variant" style={{ backgroundColor: `${color}26` }}>
@@ -481,7 +491,7 @@ function UpcomingCard({ occ, resolveColor, catById, from }: { occ: Occ; resolveC
         )}
         <h4 className="truncate font-bold text-on-surface transition-colors group-hover:text-primary">{occ.event.canonicalTitle}</h4>
         <div className="mt-0.5 flex items-center gap-3 text-on-surface-variant">
-          <span className="flex items-center gap-1 text-xs"><Icon name="schedule" className="text-[15px]" />{formatJstTime(occ.startsAt)}</span>
+          <span className="flex items-center gap-1 text-xs"><Icon name="schedule" className="text-[15px]" />{ongoing ? `${endLabel(occ.endsAt)} まで` : formatJstTime(occ.startsAt)}</span>
           {occ.event.venue && <span className="flex items-center gap-1 truncate text-xs"><Icon name="location_on" className="text-[15px]" />{occ.event.venue.name}</span>}
         </div>
       </div>
