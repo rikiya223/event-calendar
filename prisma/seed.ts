@@ -16,7 +16,7 @@ const CATEGORY_TREE: {
   { name: "展覧会・美術館", colorKey: "amber", icon: "🖼️", children: ["美術展", "博物館", "写真展"] },
   { name: "映画・エンタメ", colorKey: "red", icon: "🎬", children: ["公開日", "試写会", "舞台・演劇"] },
   { name: "ゲーム・発売日", colorKey: "lime", icon: "🎮", children: ["発売日", "アップデート", "eスポーツ"] },
-  { name: "祝日・カレンダー行事", colorKey: "purple", icon: "📅", children: ["祝日", "季節行事", "表彰・賞レース"] },
+  { name: "祝日・カレンダー行事", colorKey: "purple", icon: "📅", children: ["祝日", "季節行事", "祭り", "表彰・賞レース"] },
   { name: "その他", colorKey: "slate", icon: "✨" },
 ];
 

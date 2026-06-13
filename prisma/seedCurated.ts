@@ -392,6 +392,86 @@ const CURATED: Curated[] = [
     description: "生命史における5度の大量絶滅をたどる特別展。会期は7月17日〜10月12日。",
     sourceUrl: "https://www.mus-nh.city.osaka.jp/#daizetsumetsu-2026",
   },
+
+  // ── 全国の伝統祭り（夏） ──
+  {
+    title: "祇園祭 山鉾巡行（京都）",
+    occurrences: [
+      { start: "2026-07-17T09:00:00+09:00" }, // 前祭
+      { start: "2026-07-24T09:30:00+09:00" }, // 後祭
+    ],
+    venue: { name: "京都市中心部（四条・河原町ほか）", region: "京都府" },
+    categoryName: "祭り",
+    description: "日本三大祭の一つ。7月の山鉾巡行（前祭17日・後祭24日）が見どころ。",
+    sourceUrl: "https://ja.kyoto.travel/#gion-2026",
+  },
+  {
+    title: "天神祭（大阪）",
+    occurrences: [
+      { start: "2026-07-24T16:00:00+09:00" }, // 宵宮
+      { start: "2026-07-25T18:00:00+09:00" }, // 本宮（船渡御・奉納花火）
+    ],
+    venue: { name: "大阪天満宮・大川周辺", address: "大阪府大阪市北区天神橋2-1-8", region: "大阪府" },
+    categoryName: "祭り",
+    description: "日本三大祭の一つ。7月25日本宮の船渡御と奉納花火が圧巻。",
+    sourceUrl: "https://osakatemmangu.or.jp/#tenjin-2026",
+  },
+  {
+    title: "博多祇園山笠（福岡）",
+    occurrences: [{ start: "2026-07-01T10:00:00+09:00", end: "2026-07-15T06:00:00+09:00" }],
+    venue: { name: "櫛田神社・博多周辺", address: "福岡県福岡市博多区上川端町1-41", region: "福岡県" },
+    categoryName: "祭り",
+    description: "7月1日〜15日に行われる博多の夏祭り。クライマックスは15日早朝の「追い山」。",
+    sourceUrl: "https://www.hakatayamakasa.com/#2026",
+  },
+  {
+    title: "青森ねぶた祭",
+    occurrences: [{ start: "2026-08-02T18:45:00+09:00", end: "2026-08-07T21:00:00+09:00" }],
+    venue: { name: "青森市中心部", region: "青森県" },
+    categoryName: "祭り",
+    description: "巨大な人形灯籠「ねぶた」が練り歩く東北を代表する夏祭り。8月2日〜7日。",
+    sourceUrl: "https://www.nebuta.jp/#2026",
+  },
+  {
+    title: "秋田竿燈まつり",
+    occurrences: [{ start: "2026-08-03T18:30:00+09:00", end: "2026-08-06T21:00:00+09:00" }],
+    venue: { name: "竿燈大通り（秋田市）", region: "秋田県" },
+    categoryName: "祭り",
+    description: "稲穂に見立てた竿燈を操る妙技が見もの。8月3日〜6日。",
+    sourceUrl: "https://www.kantou.gr.jp/#2026",
+  },
+  {
+    title: "仙台七夕まつり",
+    occurrences: [{ start: "2026-08-06T10:00:00+09:00", end: "2026-08-08T21:00:00+09:00" }],
+    venue: { name: "仙台市中心部（一番町ほか）", region: "宮城県" },
+    categoryName: "祭り",
+    description: "豪華絢爛な七夕飾りが街を彩る。8月6日〜8日。",
+    sourceUrl: "https://www.sendaitanabata.com/#2026",
+  },
+  {
+    title: "山形花笠まつり",
+    occurrences: [{ start: "2026-08-05T18:00:00+09:00", end: "2026-08-07T21:30:00+09:00" }],
+    venue: { name: "十日町〜文翔館（山形市）", region: "山形県" },
+    categoryName: "祭り",
+    description: "花笠を手に「ヤッショ、マカショ」の掛け声で踊り練り歩く。8月5日〜7日。",
+    sourceUrl: "https://www.mountain-j.com/hanagasa/#2026",
+  },
+  {
+    title: "よさこい祭り（高知）",
+    occurrences: [{ start: "2026-08-09T17:00:00+09:00", end: "2026-08-12T21:00:00+09:00" }],
+    venue: { name: "高知市内（追手筋ほか）", region: "高知県" },
+    categoryName: "祭り",
+    description: "鳴子を鳴らして踊る高知の夏の風物詩。第73回。前夜祭9日〜後夜祭12日。",
+    sourceUrl: "https://www.welcome-kochi.jp/yosakoi/#2026",
+  },
+  {
+    title: "阿波踊り（徳島）",
+    occurrences: [{ start: "2026-08-11T18:00:00+09:00", end: "2026-08-15T22:30:00+09:00" }],
+    venue: { name: "徳島市内 各演舞場", region: "徳島県" },
+    categoryName: "祭り",
+    description: "「踊る阿呆に見る阿呆」で知られる日本最大級の盆踊り。8月11日〜15日。",
+    sourceUrl: "https://www.awaodori-kaikan.jp/#2026",
+  },
 ];
 
 async function findOrCreateVenue(v?: Curated["venue"]) {
