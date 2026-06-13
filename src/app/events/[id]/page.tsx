@@ -32,7 +32,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     select: { canonicalTitle: true, description: true },
   });
   if (!event) return { title: "イベント" };
-  return { title: event.canonicalTitle, description: event.description ?? undefined };
+  const description = event.description?.slice(0, 120) ?? `${event.canonicalTitle}の開催情報をチェック。`;
+  return {
+    title: event.canonicalTitle,
+    description,
+    openGraph: {
+      type: "article",
+      title: event.canonicalTitle,
+      description,
+      url: `/events/${id}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.canonicalTitle,
+      description,
+    },
+  };
 }
 
 function safeBack(from?: string): string {

@@ -8,6 +8,7 @@ import { Fab } from "@/components/Fab";
 import { Footer } from "@/components/Footer";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/admin";
+import { SITE_NAME, SITE_DESCRIPTION, siteUrl } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -16,11 +17,26 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: {
-    default: "イベントカレンダー",
-    template: "%s｜イベントカレンダー",
+    default: SITE_NAME,
+    template: `%s｜${SITE_NAME}`,
   },
-  description: "世界中のイベントをカレンダーで発見できるサービス",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    locale: "ja_JP",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default async function RootLayout({

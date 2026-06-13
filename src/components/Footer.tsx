@@ -1,7 +1,16 @@
+import Link from "next/link";
+
 export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="border-t border-outline-variant/30 px-4 py-6 text-center text-xs leading-relaxed text-on-surface-variant">
+      <nav className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+        <Link href="/about" className="hover:text-primary hover:underline">運営者情報・お問い合わせ</Link>
+        <span className="text-outline-variant/50">·</span>
+        <Link href="/terms" className="hover:text-primary hover:underline">利用規約</Link>
+        <span className="text-outline-variant/50">·</span>
+        <Link href="/privacy" className="hover:text-primary hover:underline">プライバシーポリシー</Link>
+      </nav>
       <p>
         映画情報の一部は{" "}
         <a
