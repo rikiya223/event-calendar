@@ -23,7 +23,7 @@ const CAT_ICON: Record<string, string> = {
   "暮らし・地域": "home",
   その他: "category",
 };
-const POPULAR_TAGS = ["ライブ", "美術展", "サッカー", "フェス", "公開日"];
+const POPULAR_TAGS = ["ライブ", "美術展", "サッカー", "フェス", "映画公開日"];
 
 type SearchParams = { q?: string; region?: string };
 

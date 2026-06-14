@@ -20,7 +20,13 @@ function paramFor(ymd: Ymd): string {
 }
 
 const occInclude = {
-  event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } },
+  event: {
+    include: {
+      venue: true,
+      eventCategories: { select: { categoryId: true } },
+      _count: { select: { bookmarks: true } }, // 「気になる」数（注目イベントの選定に使う）
+    },
+  },
 } as const;
 
 // イベント側の where。地域と検索を組み立てる（カテゴリ除外はクライアント側で行うのでここでは扱わない）。

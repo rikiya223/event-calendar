@@ -16,7 +16,7 @@ type Demo = {
 
 const DEMO: Demo[] = [
   { title: "J1リーグ FC東京 vs 横浜FM", startsAt: "2026-06-14T19:00:00+09:00", venue: { name: "味の素スタジアム", address: "東京都調布市西町376-3", region: "東京都" }, categoryName: "サッカー" },
-  { title: "映画「夏の記憶」公開", startsAt: "2026-06-11T00:00:00+09:00", categoryName: "公開日" },
+  { title: "映画「夏の記憶」公開", startsAt: "2026-06-11T00:00:00+09:00", categoryName: "映画公開日" },
   { title: "新作ゲーム「星の探究」発売", startsAt: "2026-06-11T00:00:00+09:00", categoryName: "発売日" },
   { title: "モネ 睡蓮の世界 展", startsAt: "2026-06-20T10:00:00+09:00", endsAt: "2026-06-20T18:00:00+09:00", venue: { name: "国立新美術館", address: "東京都港区六本木7-22-2", region: "東京都" }, categoryName: "美術展" },
   { title: "クラシックの夕べ", startsAt: "2026-06-25T18:30:00+09:00", venue: { name: "サントリーホール", address: "東京都港区赤坂1-13-1", region: "東京都" }, categoryName: "クラシック" },

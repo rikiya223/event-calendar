@@ -22,7 +22,7 @@ export const ICAL_FEEDS: IcalFeed[] = [
   {
     name: "映画.com 公開予定",
     url: "https://eiga.com/movie/coming.ics",
-    category: "公開日",
+    category: "映画公開日",
     publish: true,
     includeDescription: false,
   },

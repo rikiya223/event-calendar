@@ -18,7 +18,7 @@ export async function ingestTmdbMovies(): Promise<IngestResult> {
   const key = process.env.TMDB_API_KEY;
   if (!key) throw new Error("TMDB_API_KEY が未設定です。");
 
-  const cat = await prisma.category.findFirst({ where: { name: "公開日" } });
+  const cat = await prisma.category.findFirst({ where: { name: "映画公開日" } });
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
   let created = 0;

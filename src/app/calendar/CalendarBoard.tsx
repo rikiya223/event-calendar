@@ -32,6 +32,7 @@ type Occ = {
     canonicalTitle: string;
     venue: { name: string; region: string | null } | null;
     eventCategories: { categoryId: string }[];
+    _count: { bookmarks: number };
   };
 };
 type Cat = { id: string; name: string; icon: string | null; colorKey: string | null; parentId: string | null };
@@ -164,9 +165,18 @@ export function CalendarBoard({
   const fSearch = useMemo(() => searchResults.filter(visible), [searchResults, exSet]);
 
   const { start, end, days } = buildRange(view, anchor);
-  const upcoming = dedupeByEvent(fUpcoming, 6);
   const isFiltering = (ex.length > 0 || regions.length > 0) && !q;
   const nearbyList = isFiltering ? dedupeByEvent(fUpcoming, 200) : dedupeByEvent(fUpcoming, 30);
+
+  // 注目のイベント：今日以降のイベントのうち「気になる」が最も多いものを1件。
+  // まだ誰も気になっていない（全部0件）ときは、いちばん近い開催を出す。
+  const highlight = useMemo(() => {
+    const list = dedupeByEvent(fUpcoming, 200);
+    if (list.length === 0) return undefined;
+    let best = list[0];
+    for (const o of list) if (o.event._count.bookmarks > best.event._count.bookmarks) best = o;
+    return best.event._count.bookmarks > 0 ? best : list[0];
+  }, [fUpcoming]);
 
   const byDay = useMemo(() => {
     const m = new Map<string, Occ[]>();
@@ -190,7 +200,6 @@ export function CalendarBoard({
   const todayKey = ymdKey(todayJst());
   const selectedKey = paramFor(selected);
   const selectedEvents = byDay.get(selectedKey) ?? [];
-  const highlight = upcoming[0];
 
   const backHref = hrefFor({ view, date: selected, ex: exParam, q, region: regionParam });
   const hasFilters = ex.length > 0 || regions.length > 0 || !!q;
@@ -532,7 +541,7 @@ function DayPanelCard({ occ, resolveColor, catById, from, dayKey }: { occ: Occ; 
         ) : <span />}
         {multiDay ? (
           ongoing ? (
-            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">会期中 〜{end}</span>
+            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">開催中 〜{end}</span>
           ) : (
             <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">初日 〜{end}</span>
           )
