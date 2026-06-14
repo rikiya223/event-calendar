@@ -421,9 +421,9 @@ export function CalendarBoard({
               <div className="mb-3 flex items-center justify-between px-1">
                 <h2 className="text-xl font-bold text-on-surface sm:text-2xl">{anchor.y}年{anchor.m + 1}月</h2>
                 <div className="flex items-center gap-1">
-                  <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, -1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="前の月"><Icon name="chevron_left" /></Link>
-                  <Link href={hrefFor({ view, date: todayJst(), ex: exParam, q, region: regionParam, open: openId })} className="rounded-lg px-2 py-1 text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50">今日</Link>
-                  <Link href={hrefFor({ view, date: shiftAnchor(view, anchor, 1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="次の月"><Icon name="chevron_right" /></Link>
+                  <Link scroll={false} href={hrefFor({ view, date: shiftAnchor(view, anchor, -1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="前の月"><Icon name="chevron_left" /></Link>
+                  <Link scroll={false} href={hrefFor({ view, date: todayJst(), ex: exParam, q, region: regionParam, open: openId })} className="rounded-lg px-2 py-1 text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50">今日</Link>
+                  <Link scroll={false} href={hrefFor({ view, date: shiftAnchor(view, anchor, 1), ex: exParam, q, region: regionParam, open: openId })} className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-variant/50" aria-label="次の月"><Icon name="chevron_right" /></Link>
                 </div>
               </div>
               <div className="grid grid-cols-7 border-t border-outline-variant/20">
@@ -445,6 +445,7 @@ export function CalendarBoard({
                     <Link
                       key={key}
                       href={`/calendar?${params.toString()}`}
+                      scroll={false}
                       className={`relative flex h-16 flex-col gap-1 border-b border-r border-outline-variant/10 p-1.5 transition sm:h-[92px] ${
                         isSelected
                           ? "z-10 rounded-lg bg-primary-container/15 ring-2 ring-inset ring-primary"
