@@ -969,6 +969,24 @@ const CURATED: Curated[] = [
     description,
     sourceUrl: `manual:research3:${start}:${title}`,
   })),
+
+  // ── 続々・調査して追加（ビジネス/学び/旅行/クラシック・公式日程）──
+  ...([
+    // [タイトル, 開始ISO, 終了ISO("")=単日, カテゴリ, 会場(""=なし), 都道府県, 説明]
+    ["AWS Summit Japan 2026", "2026-06-25T10:00:00+09:00", "2026-06-26T18:00:00+09:00", "テック・IT", "幕張メッセ", "千葉県", "アマゾンのクラウドAWSの国内最大級カンファレンス。"],
+    ["Google Cloud Next Tokyo 2026", "2026-07-30T10:00:00+09:00", "2026-07-31T18:00:00+09:00", "カンファレンス", "東京ビッグサイト", "東京都", "Google CloudのAI・クラウド技術カンファレンス。"],
+    ["ツーリズムEXPOジャパン2026", "2026-09-24T10:00:00+09:00", "2026-09-27T18:00:00+09:00", "旅行・観光", "東京ビッグサイト", "東京都", "国内外の観光が集う世界最大級の旅の祭典。"],
+    ["日商簿記検定 第174回（統一試験）", "2026-11-15T09:00:00+09:00", "", "資格試験", "", "", "全国一斉の簿記検定（ペーパー統一試験）。"],
+    ["防災の日", "2026-09-01T00:00:00+09:00", "", "防災", "", "", "関東大震災にちなむ防災啓発の日。各地で防災訓練が行われる。"],
+    ["東急ジルベスターコンサート 2026-2027", "2026-12-31T22:30:00+09:00", "", "クラシック", "東京国際フォーラム ホールA", "東京都", "カウントダウンの瞬間に名曲を奏でる年越しクラシックコンサート。"],
+  ] as const).map(([title, start, end, categoryName, venue, region, description]) => ({
+    title,
+    occurrences: [end ? { start, end } : { start }],
+    venue: venue ? { name: venue, region: region || undefined } : undefined,
+    categoryName,
+    description,
+    sourceUrl: `manual:research4:${start.slice(0, 10)}:${title}`,
+  })),
 ];
 
 async function findOrCreateVenue(v?: Curated["venue"]) {
