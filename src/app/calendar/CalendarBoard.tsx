@@ -416,36 +416,33 @@ export function CalendarBoard({
                             : "hover:bg-surface-variant/40"
                       } ${inMonth ? "" : "opacity-30"}`}
                     >
-                      <div className="flex items-start justify-between gap-1">
-                        <span
-                          className={`grid h-5 w-5 place-items-center rounded-full text-xs ${
-                            isToday
-                              ? "bg-primary font-bold text-white"
-                              : isSelected
-                                ? "font-bold text-primary"
-                                : p.weekday === 0
-                                  ? "text-rose-500"
-                                  : p.weekday === 6
-                                    ? "text-sky-500"
-                                    : "text-on-surface-variant"
-                          }`}
-                        >
-                          {p.d}
-                        </span>
-                        {list.length > 0 && (
-                          <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary/12 px-1 text-[10px] font-bold leading-none text-primary">
-                            {list.length}
-                          </span>
-                        )}
-                      </div>
+                      <span
+                        className={`grid h-5 w-5 place-items-center rounded-full text-xs ${
+                          isToday
+                            ? "bg-primary font-bold text-white"
+                            : isSelected
+                              ? "font-bold text-primary"
+                              : p.weekday === 0
+                                ? "text-rose-500"
+                                : p.weekday === 6
+                                  ? "text-sky-500"
+                                  : "text-on-surface-variant"
+                        }`}
+                      >
+                        {p.d}
+                      </span>
                       {list.length > 0 && (
                         <>
-                          <div className="mt-auto flex flex-wrap gap-0.5 sm:hidden">
-                            {list.slice(0, 3).map((occ) => (
-                              <span key={occ.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: eventColor(occ) }} />
-                            ))}
-                            {list.length > 3 && <span className="text-[9px] leading-none text-outline">+{list.length - 3}</span>}
+                          {/* モバイル：色ドット＋「N件」 */}
+                          <div className="mt-auto flex items-center gap-1 sm:hidden">
+                            <div className="flex gap-0.5">
+                              {list.slice(0, 3).map((occ) => (
+                                <span key={occ.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: eventColor(occ) }} />
+                              ))}
+                            </div>
+                            <span className="text-[9px] font-semibold leading-none text-on-surface-variant">{list.length}件</span>
                           </div>
+                          {/* PC：イベント名＋「N件」 */}
                           <div className="mt-0.5 hidden flex-col gap-0.5 sm:flex">
                             {list.slice(0, 2).map((occ) => (
                               <span
@@ -456,7 +453,9 @@ export function CalendarBoard({
                                 {occ.event.canonicalTitle}
                               </span>
                             ))}
-                            {list.length > 2 && <span className="px-1 text-[9px] leading-none text-outline">+{list.length - 2}件</span>}
+                            <span className="mt-px px-1 text-[9px] font-semibold leading-none text-on-surface-variant">
+                              {list.length > 2 ? `全${list.length}件` : `${list.length}件`}
+                            </span>
                           </div>
                         </>
                       )}
