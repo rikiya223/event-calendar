@@ -189,14 +189,13 @@ export function CalendarBoard({
   const isFiltering = (ex.length > 0 || regions.length > 0) && !q;
   const nearbyList = isFiltering ? dedupeByEvent(fUpcoming, 200) : dedupeByEvent(fUpcoming, 30);
 
-  // 注目のイベント：今日以降のイベントのうち「気になる」が最も多いものを1件。
-  // まだ誰も気になっていない（全部0件）ときは、いちばん近い開催を出す。
-  const highlight = useMemo(() => {
+  // 注目のイベント：今日以降のイベントを「気になる」が多い順（同数なら開催が近い順）で上位3件。
+  // まだ誰も気になっていない（全部0件）うちは、いちばん近い開催が並ぶ。
+  const highlights = useMemo(() => {
     const list = dedupeByEvent(fUpcoming, 200);
-    if (list.length === 0) return undefined;
-    let best = list[0];
-    for (const o of list) if (o.event._count.bookmarks > best.event._count.bookmarks) best = o;
-    return best.event._count.bookmarks > 0 ? best : list[0];
+    return [...list]
+      .sort((a, b) => b.event._count.bookmarks - a.event._count.bookmarks || a.startsAt.getTime() - b.startsAt.getTime())
+      .slice(0, 3);
   }, [fUpcoming]);
 
   const byDay = useMemo(() => {
@@ -530,9 +529,16 @@ export function CalendarBoard({
         <DayList days={days} byDay={byDay} todayKey={todayKey} resolveColor={resolveColor} catById={catById} from={backHref} />
       )}
 
-      {/* 注目のイベント（カレンダーの下。テキスト検索中は出さない）*/}
-      {!q && highlight && (
-        <Highlight occ={highlight} color={eventColor(highlight)} catById={catById} from={backHref} />
+      {/* 注目のイベント（カレンダーの下。気になる順で上位3件・横スクロール）。テキスト検索中は出さない。*/}
+      {!q && highlights.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-lg font-bold text-on-surface">注目のイベント</h3>
+          <Carousel>
+            {highlights.map((occ) => (
+              <HighlightCard key={occ.id} occ={occ} color={eventColor(occ)} catById={catById} from={backHref} />
+            ))}
+          </Carousel>
+        </section>
       )}
     </div>
   );
@@ -598,28 +604,32 @@ function DayPanelCard({ occ, resolveColor, catById, from, dayKey }: { occ: Occ; 
   );
 }
 
-// 特集ハイライト（画像の代わりにカテゴリ色のグラデーション）
-function Highlight({ occ, color, catById, from }: { occ: Occ; color: string; catById: Map<string, { name: string }>; from: string }) {
+// 注目ハイライトのカード（横スクロール用・カテゴリ色のグラデーション）。
+function HighlightCard({ occ, color, catById, from }: { occ: Occ; color: string; catById: Map<string, { name: string }>; from: string }) {
   const p = jstParts(occ.startsAt);
+  const likes = occ.event._count.bookmarks;
   return (
-    <section>
-      <h3 className="mb-3 text-lg font-bold text-on-surface">注目のイベント</h3>
-      <Link href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`} className="group relative block h-52 overflow-hidden rounded-2xl shadow-lg" style={{ background: `linear-gradient(135deg, ${color}, #004ac6)` }}>
-        <div className="absolute inset-0 bg-black/25" />
-        <div className="absolute inset-0 flex flex-col justify-end gap-2 p-6 text-white">
-          <div className="flex flex-wrap gap-2">
-            {occ.event.eventCategories.slice(0, 2).map((ec) => (
-              <span key={ec.categoryId} className="rounded-full bg-white/25 px-3 py-1 text-[11px] font-semibold backdrop-blur-sm">{catById.get(ec.categoryId)?.name ?? ""}</span>
-            ))}
-          </div>
-          <h2 className="text-2xl font-bold leading-tight">{occ.event.canonicalTitle}</h2>
-          <p className="text-sm text-white/85">{p.y}年{p.m + 1}月{p.d}日{occ.event.venue ? ` ・ ${occ.event.venue.name}` : ""}</p>
-        </div>
-        <span className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-primary transition group-hover:bg-white">
-          <Icon name="arrow_forward" />
+    <Link
+      href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`}
+      className="group relative flex h-44 w-[300px] shrink-0 snap-start flex-col justify-end overflow-hidden rounded-2xl p-5 text-white shadow-lg sm:w-[340px]"
+      style={{ background: `linear-gradient(135deg, ${color}, #004ac6)` }}
+    >
+      <div className="absolute inset-0 bg-black/25" />
+      {likes > 0 && (
+        <span className="absolute right-3 top-3 inline-flex items-center gap-0.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold text-primary">
+          <Icon name="favorite" className="text-[13px]" />{likes}
         </span>
-      </Link>
-    </section>
+      )}
+      <div className="relative flex flex-col gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
+          {occ.event.eventCategories.slice(0, 2).map((ec) => (
+            <span key={ec.categoryId} className="rounded-full bg-white/25 px-2.5 py-0.5 text-[10px] font-semibold backdrop-blur-sm">{catById.get(ec.categoryId)?.name ?? ""}</span>
+          ))}
+        </div>
+        <h2 className="line-clamp-2 text-lg font-bold leading-tight">{occ.event.canonicalTitle}</h2>
+        <p className="truncate text-xs text-white/85">{p.y}年{p.m + 1}月{p.d}日{occ.event.venue ? ` ・ ${occ.event.venue.name}` : ""}</p>
+      </div>
+    </Link>
   );
 }
 
