@@ -262,21 +262,17 @@ export function CalendarBoard({
       </div>
 
       {/* カテゴリ絞り込み（除外方式・チェックで表示/非表示。押すと即時反映＝サーバ往復なし）*/}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between gap-2 px-0.5">
-          <span className="flex items-center gap-1 text-xs font-medium text-on-surface-variant">
-            <Icon name="tune" className="text-[15px]" />表示するカテゴリ
-          </span>
+      <div className="space-y-2">
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* すべて表示 ⇄ すべて非表示（控えめなチップ）*/}
           <button
             type="button"
             onClick={toggleAll}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-variant/50 px-3 py-1 text-xs font-medium text-on-surface-variant transition hover:bg-surface-variant"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-variant/40 px-2.5 py-1 text-xs font-medium text-on-surface-variant transition hover:bg-surface-variant/70"
           >
-            <Icon name={allExcluded ? "visibility" : "visibility_off"} className="text-[15px]" />
+            <Icon name={allExcluded ? "visibility" : "visibility_off"} className="text-[14px]" />
             {allExcluded ? "すべて表示" : "すべて非表示"}
           </button>
-        </div>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {topCategories.map((c) => {
             const state = topState(c);
             const color = colorForKey(c.colorKey);
@@ -291,28 +287,28 @@ export function CalendarBoard({
                 <button
                   type="button"
                   onClick={() => toggleTop(c)}
-                  className={`inline-flex items-center gap-1.5 whitespace-nowrap py-1.5 pl-2.5 text-sm font-medium transition ${on ? "pr-2.5" : "pr-3.5"} ${
+                  className={`inline-flex items-center gap-1 whitespace-nowrap py-1 pl-2 text-xs font-medium transition ${on ? "pr-2" : "pr-3"} ${
                     on ? "text-on-surface hover:bg-black/[0.02]" : "bg-surface-variant/40 text-on-surface-variant hover:bg-surface-variant/60"
                   }`}
                 >
                   <span className="inline-flex" style={on ? { color } : undefined}>
                     <Icon
                       name={state === "on" ? "check_circle" : state === "partial" ? "remove_circle" : "radio_button_unchecked"}
-                      className={`text-[18px] ${on ? "" : "text-outline"}`}
+                      className={`text-[15px] ${on ? "" : "text-outline"}`}
                     />
                   </span>
                   {c.name}
-                  {state === "partial" && <span className="rounded bg-surface-variant/70 px-1 text-[10px] font-semibold text-on-surface-variant">一部</span>}
+                  {state === "partial" && <span className="rounded bg-surface-variant/70 px-1 text-[9px] font-semibold text-on-surface-variant">一部</span>}
                 </button>
                 {on && (
                   <button
                     type="button"
                     onClick={() => toggleOpen(c.id)}
                     aria-label={`${c.name}の中分類を${isOpen ? "閉じる" : "開く"}`}
-                    className={`grid w-7 place-items-center border-l text-on-surface-variant transition ${isOpen ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
+                    className={`grid w-6 place-items-center border-l text-on-surface-variant transition ${isOpen ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
                     style={{ borderColor: `${color}33` }}
                   >
-                    <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[18px]" />
+                    <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[16px]" />
                   </button>
                 )}
               </div>
