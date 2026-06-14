@@ -37,7 +37,7 @@ export function Carousel({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="group relative"
+      className="relative"
       onMouseEnter={hold}
       onMouseLeave={release}
       onFocusCapture={hold}
