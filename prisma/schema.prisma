@@ -150,8 +150,17 @@ model User {
 
   bookmarks   Bookmark[]
   submissions EventSubmission[]
+  calendarPref UserCalendarPref?
 
   createdAt DateTime @default(now())
+}
+
+// ユーザーごとのカレンダー絞り込み設定（ログイン中は次回以降のデフォルトに使う）。
+model UserCalendarPref {
+  userId              String   @id @db.Uuid
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  excludedCategoryIds String[] @db.Uuid // 非表示にするカテゴリ（中分類id）
+  updatedAt           DateTime @updatedAt
 }
 
 model Bookmark {

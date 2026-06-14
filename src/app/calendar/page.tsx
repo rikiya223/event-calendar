@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { type CalView, type Ymd, buildRange, parseDateParam, todayJst, ymdKey, jstParts, jstMidnightUtc } from "@/lib/calendar";
 import { activeOccurrenceFilter } from "@/lib/eventStatus";
+import { getCurrentUser } from "@/lib/supabase/server";
 import { CalendarBoard } from "./CalendarBoard";
 
 export const dynamic = "force-dynamic";
@@ -68,30 +69,42 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const selected = parseDateParam(sp.date);
   const anchor = view === "month" ? { ...selected, d: 1 } : selected;
   const q = (sp.q ?? "").trim();
-  const ex = (sp.ex ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const regions = (sp.region ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const openId = (sp.open ?? "").trim() || null;
+  // URL に ex があれば明示指定（空 "ex=" は「全表示」の意思表示）。無ければ保存設定を既定に使う。
+  const exParamPresent = sp.ex !== undefined;
+  const exFromUrl = (sp.ex ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
-  // 都道府県候補・カテゴリ・カテゴリ使用状況は互いに独立なので並列取得
-  const [regionRows, allCategories, usedCatRows] = await Promise.all([
-    prisma.venue.findMany({
-      where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
-      distinct: ["region"],
-      select: { region: true },
-      orderBy: { region: "asc" },
-    }),
-    prisma.category.findMany({
-      select: { id: true, name: true, icon: true, colorKey: true, parentId: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.eventCategory.findMany({
-      where: { event: { status: "PUBLISHED" } },
-      select: { categoryId: true },
-      distinct: ["categoryId"],
-    }),
+  // ログインユーザーと、カテゴリ候補などを並列取得
+  const [user, [regionRows, allCategories, usedCatRows]] = await Promise.all([
+    getCurrentUser(),
+    Promise.all([
+      prisma.venue.findMany({
+        where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
+        distinct: ["region"],
+        select: { region: true },
+        orderBy: { region: "asc" },
+      }),
+      prisma.category.findMany({
+        select: { id: true, name: true, icon: true, colorKey: true, parentId: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.eventCategory.findMany({
+        where: { event: { status: "PUBLISHED" } },
+        select: { categoryId: true },
+        distinct: ["categoryId"],
+      }),
+    ]),
   ]);
   const availableRegions = regionRows.map((r) => r.region!).filter(Boolean);
   const usedCatIds = usedCatRows.map((r) => r.categoryId);
+
+  // ログイン中なら保存済みの絞り込みを取得。URL未指定のときの既定に使う。
+  const savedPref = user
+    ? await prisma.userCalendarPref.findUnique({ where: { userId: user.id }, select: { excludedCategoryIds: true } })
+    : null;
+  const savedEx = savedPref?.excludedCategoryIds ?? null;
+  const initialEx = exParamPresent ? exFromUrl : savedEx ?? [];
 
   const today = todayJst();
   const fromToday = jstMidnightUtc(today.y, today.m, today.d);
@@ -126,8 +139,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         occurrences={occurrences}
         upcomingRaw={upcomingRaw}
         searchResults={searchResults}
-        initialEx={ex}
+        initialEx={initialEx}
         initialOpen={openId}
+        canSave={!!user}
+        savedEx={savedEx}
       />
     </main>
   );

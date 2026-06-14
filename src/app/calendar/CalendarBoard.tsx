@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { colorForKey } from "@/lib/categoryColors";
 import { Icon } from "@/components/Icon";
+import { saveCalendarFilter } from "./actions";
 import {
   type CalView,
   type Ymd,
@@ -49,7 +51,8 @@ function hrefFor(opts: { view: CalView; date: Ymd; ex?: string | null; q?: strin
   const sp = new URLSearchParams();
   sp.set("view", opts.view);
   sp.set("date", paramFor(opts.date));
-  if (opts.ex) sp.set("ex", opts.ex);
+  // ex は空文字 "" も明示（保存設定の既定を上書きして「全表示」にするため）。null/undefined のみ省略。
+  if (opts.ex != null) sp.set("ex", opts.ex);
   if (opts.q) sp.set("q", opts.q);
   if (opts.region) sp.set("region", opts.region);
   if (opts.open) sp.set("open", opts.open);
@@ -69,6 +72,8 @@ export function CalendarBoard({
   searchResults,
   initialEx,
   initialOpen,
+  canSave,
+  savedEx,
 }: {
   view: CalView;
   selected: Ymd;
@@ -82,17 +87,25 @@ export function CalendarBoard({
   searchResults: Occ[];
   initialEx: string[];
   initialOpen: string | null;
+  canSave: boolean;
+  savedEx: string[] | null;
 }) {
   // カテゴリ除外と中分類の開閉だけをクライアント状態に持つ（＝サーバ往復なしで即時反映）。
   // view / date / q / region の変更はこれまで通りナビゲーション（サーバ再取得）。
   const [ex, setEx] = useState<string[]>(initialEx);
   const [openId, setOpenId] = useState<string | null>(initialOpen);
+  const [justSaved, setJustSaved] = useState(false);
+  const [savePending, startSave] = useTransition();
+  const router = useRouter();
 
   const regions = selectedRegions;
   const regionSet = new Set(regions);
   const exSet = useMemo(() => new Set(ex), [ex]);
-  const exParam = ex.length ? ex.join(",") : null;
+  // 保存設定がある人は、空でも "ex=" を明示してURLに残す（ナビゲーション先で既定が再適用されるのを防ぐ）。
+  const exParam = ex.length ? ex.join(",") : savedEx !== null ? "" : null;
   const regionParam = regions.length ? regions.join(",") : null;
+  // 現在の絞り込みが保存済みの内容と同じか
+  const isSavedState = savedEx !== null && [...ex].sort().join(",") === [...savedEx].sort().join(",");
   const usedCatSet = useMemo(() => new Set(usedCatIds), [usedCatIds]);
 
   const anchor = view === "month" ? { ...selected, d: 1 } : selected;
@@ -140,8 +153,19 @@ export function CalendarBoard({
   const applyEx = (next: string[], nextOpen: string | null = openId) => {
     setEx(next);
     setOpenId(nextOpen);
-    const href = hrefFor({ view, date: selected, ex: next.length ? next.join(",") : null, q, region: regionParam, open: nextOpen });
+    setJustSaved(false);
+    // 保存設定がある人は空でも "ex=" を残す（既定が再適用されないように）。
+    const exStr = next.length ? next.join(",") : savedEx !== null ? "" : null;
+    const href = hrefFor({ view, date: selected, ex: exStr, q, region: regionParam, open: nextOpen });
     window.history.replaceState(null, "", href);
+  };
+  // 現在の絞り込みを保存（ログイン中のみ）。次回以降の既定になる。
+  const onSave = () => {
+    startSave(async () => {
+      await saveCalendarFilter(ex);
+      setJustSaved(true);
+      router.refresh(); // savedEx を最新化（状態 ex は保持される）
+    });
   };
   const toggleTop = (t: Top) => {
     const set = new Set(ex);
@@ -328,6 +352,23 @@ export function CalendarBoard({
             ))}
           </div>
         )}
+
+        {/* 絞り込みの保存（ログイン中のみ）。保存すると次回開いたときの既定になる。*/}
+        {canSave && (
+          <div className="flex flex-wrap items-center gap-2 px-0.5">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={savePending || isSavedState}
+              className="inline-flex items-center gap-1 rounded-full bg-surface-variant/40 px-3 py-1 text-xs font-medium text-on-surface-variant transition hover:bg-surface-variant disabled:opacity-60"
+            >
+              <Icon name={isSavedState ? "bookmark_added" : "bookmark_add"} className="text-[15px]" />
+              {savePending ? "保存中…" : isSavedState ? "この絞り込みを保存済み" : "この絞り込みを既定に保存"}
+            </button>
+            {justSaved && !isSavedState && <span className="text-[11px] text-primary">保存しました</span>}
+            {savedEx !== null && <span className="text-[11px] text-outline">次回からこの設定で表示されます</span>}
+          </div>
+        )}
       </div>
 
       {/* 絞り込み中の一括解除（除外・地域・検索をすべてリセット）*/}
@@ -335,7 +376,7 @@ export function CalendarBoard({
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <Icon name="filter_alt" className="text-[16px]" />
           <span>{ex.length > 0 ? `${ex.length}カテゴリを非表示中` : "絞り込み中"}</span>
-          <Link href={hrefFor({ view, date: selected })} className="inline-flex items-center gap-1 rounded-full bg-surface-variant/60 px-3 py-1 font-medium text-on-surface transition hover:bg-surface-variant">
+          <Link href={hrefFor({ view, date: selected, ex: savedEx !== null ? "" : null })} className="inline-flex items-center gap-1 rounded-full bg-surface-variant/60 px-3 py-1 font-medium text-on-surface transition hover:bg-surface-variant">
             <Icon name="close" className="text-[14px]" />すべて表示に戻す
           </Link>
         </div>
@@ -403,7 +444,7 @@ export function CalendarBoard({
                   const isToday = key === todayKey;
                   const isSelected = key === selectedKey;
                   const params = new URLSearchParams({ view: "month", date: key });
-                  if (exParam) params.set("ex", exParam);
+                  if (exParam != null) params.set("ex", exParam);
                   if (regionParam) params.set("region", regionParam);
                   if (openId) params.set("open", openId);
                   return (
