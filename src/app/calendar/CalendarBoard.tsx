@@ -345,9 +345,11 @@ export function CalendarBoard({
             )}
           </div>
           {nearbyList.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-10 text-center text-sm text-outline">
+            // カード1枚分（min-h-[200px]）＋カルーセル下余白(pb-2=8px)と高さを揃え、
+            // 絞り込みで0件になってもレイアウトが詰まらない（視線が動かない）ようにする。
+            <div className="flex h-[208px] items-center justify-center rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 text-center text-sm text-outline">
               {isFiltering ? "この条件で開催予定のイベントはありません。" : "予定されているイベントはまだありません。"}
-            </p>
+            </div>
           ) : (
             <Carousel>
               {nearbyList.map((occ) => (
@@ -445,7 +447,7 @@ export function CalendarBoard({
                               </span>
                             ))}
                             <span className="mt-px px-1 text-[9px] font-semibold leading-none text-on-surface-variant">
-                              {list.length > 2 ? `全${list.length}件` : `${list.length}件`}
+                              {list.length}件
                             </span>
                           </div>
                         </>
@@ -586,7 +588,7 @@ function CarouselCard({ occ, resolveColor, catById, from }: { occ: Occ; resolveC
   return (
     <Link
       href={`/events/${occ.event.id}?from=${encodeURIComponent(from)}`}
-      className="group flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-outline-variant/30 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex min-h-[200px] w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-outline-variant/30 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2 px-4 py-3" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
         <div className="leading-none text-slate-900/80">
