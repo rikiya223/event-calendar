@@ -94,7 +94,6 @@ export function CalendarBoard({
   // view / date / q / region の変更はこれまで通りナビゲーション（サーバ再取得）。
   const [ex, setEx] = useState<string[]>(initialEx);
   const [openId, setOpenId] = useState<string | null>(initialOpen);
-  const [justSaved, setJustSaved] = useState(false);
   const [savePending, startSave] = useTransition();
   const router = useRouter();
 
@@ -153,7 +152,6 @@ export function CalendarBoard({
   const applyEx = (next: string[], nextOpen: string | null = openId) => {
     setEx(next);
     setOpenId(nextOpen);
-    setJustSaved(false);
     // 保存設定がある人は空でも "ex=" を残す（既定が再適用されないように）。
     const exStr = next.length ? next.join(",") : savedEx !== null ? "" : null;
     const href = hrefFor({ view, date: selected, ex: exStr, q, region: regionParam, open: nextOpen });
@@ -163,7 +161,6 @@ export function CalendarBoard({
   const onSave = () => {
     startSave(async () => {
       await saveCalendarFilter(ex);
-      setJustSaved(true);
       router.refresh(); // savedEx を最新化（状態 ex は保持される）
     });
   };
@@ -355,7 +352,7 @@ export function CalendarBoard({
 
         {/* 絞り込みの保存（ログイン中のみ）。保存すると次回開いたときの既定になる。*/}
         {canSave && (
-          <div className="flex flex-wrap items-center gap-2 px-0.5">
+          <div className="px-0.5">
             <button
               type="button"
               onClick={onSave}
@@ -363,10 +360,8 @@ export function CalendarBoard({
               className="inline-flex items-center gap-1 rounded-full bg-surface-variant/40 px-3 py-1 text-xs font-medium text-on-surface-variant transition hover:bg-surface-variant disabled:opacity-60"
             >
               <Icon name={isSavedState ? "bookmark_added" : "bookmark_add"} className="text-[15px]" />
-              {savePending ? "保存中…" : isSavedState ? "この絞り込みを保存済み" : "この絞り込みを既定に保存"}
+              {savePending ? "保存中…" : isSavedState ? "保存済み" : "保存"}
             </button>
-            {justSaved && !isSavedState && <span className="text-[11px] text-primary">保存しました</span>}
-            {savedEx !== null && <span className="text-[11px] text-outline">次回からこの設定で表示されます</span>}
           </div>
         )}
       </div>
