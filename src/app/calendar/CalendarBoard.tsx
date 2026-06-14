@@ -281,32 +281,23 @@ export function CalendarBoard({
             return (
               <div
                 key={c.id}
-                className="inline-flex shrink-0 items-stretch overflow-hidden rounded-full border transition"
-                style={{ borderColor: on ? `${color}59` : "transparent", backgroundColor: on ? "#fff" : undefined }}
+                className={`inline-flex shrink-0 items-stretch overflow-hidden rounded-full transition ${on ? "" : "bg-surface-variant/40"}`}
+                style={on ? { backgroundColor: `${color}29` } : undefined}
               >
                 <button
                   type="button"
                   onClick={() => toggleTop(c)}
-                  className={`inline-flex items-center gap-1 whitespace-nowrap py-1 pl-2 text-xs font-medium transition ${on ? "pr-2" : "pr-3"} ${
-                    on ? "text-on-surface hover:bg-black/[0.02]" : "bg-surface-variant/40 text-on-surface-variant hover:bg-surface-variant/60"
-                  }`}
+                  className={`inline-flex items-center gap-1 whitespace-nowrap py-1 pl-3 text-xs font-medium transition hover:bg-black/[0.04] ${on ? "pr-2.5 text-on-surface" : "pr-3 text-on-surface-variant"}`}
                 >
-                  <span className="inline-flex" style={on ? { color } : undefined}>
-                    <Icon
-                      name={state === "on" ? "check_circle" : state === "partial" ? "remove_circle" : "radio_button_unchecked"}
-                      className={`text-[15px] ${on ? "" : "text-outline"}`}
-                    />
-                  </span>
                   {c.name}
-                  {state === "partial" && <span className="rounded bg-surface-variant/70 px-1 text-[9px] font-semibold text-on-surface-variant">一部</span>}
+                  {state === "partial" && <span className="text-[9px] font-semibold text-on-surface-variant/70">一部</span>}
                 </button>
                 {on && (
                   <button
                     type="button"
                     onClick={() => toggleOpen(c.id)}
                     aria-label={`${c.name}の中分類を${isOpen ? "閉じる" : "開く"}`}
-                    className={`grid w-6 place-items-center border-l text-on-surface-variant transition ${isOpen ? "bg-black/[0.05]" : "hover:bg-black/[0.03]"}`}
-                    style={{ borderColor: `${color}33` }}
+                    className={`grid w-6 place-items-center text-on-surface-variant transition ${isOpen ? "bg-black/[0.08]" : "bg-black/[0.03] hover:bg-black/[0.06]"}`}
                   >
                     <Icon name={isOpen ? "expand_less" : "expand_more"} className="text-[16px]" />
                   </button>
@@ -500,22 +491,18 @@ export function CalendarBoard({
   );
 }
 
-// 中分類の表示/非表示トグル（チェック方式）。off＝グレーの空きマル、on＝色付きチェック。
+// 中分類の表示/非表示トグル。off＝グレー、on＝カテゴリ色の塗り（アイコン・枠なし）。
 function SubToggle({ onClick, off, color, children }: { onClick: () => void; off: boolean; color: string; children: React.ReactNode }) {
-  const base = "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border py-1 pl-2 pr-2.5 text-sm font-medium transition";
+  const base = "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium transition hover:brightness-[0.97]";
   if (off) {
     return (
-      <button type="button" onClick={onClick} className={`${base} border-transparent bg-white/50 text-on-surface-variant hover:bg-white`}>
-        <Icon name="radio_button_unchecked" className="text-[16px] text-outline" />
+      <button type="button" onClick={onClick} className={`${base} bg-white/60 text-on-surface-variant hover:bg-white`}>
         {children}
       </button>
     );
   }
   return (
-    <button type="button" onClick={onClick} className={`${base} bg-white text-on-surface hover:bg-black/[0.02]`} style={{ borderColor: `${color}59` }}>
-      <span className="inline-flex" style={{ color }}>
-        <Icon name="check_circle" className="text-[16px]" />
-      </span>
+    <button type="button" onClick={onClick} className={`${base} text-on-surface`} style={{ backgroundColor: `${color}33` }}>
       {children}
     </button>
   );
