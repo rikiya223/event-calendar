@@ -117,7 +117,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     prisma.eventOccurrence.findMany({
       where: { ...activeOccurrenceFilter(), event: eventWhere({ q: "", regions }) },
       orderBy: { startsAt: "asc" },
-      take: 300,
+      take: 150, // クライアントに送る近日開催の上限（payload削減）
       include: occInclude,
     }),
     q ? Promise.resolve([] as Occ[]) : loadOccurrences({ start, end, q: "", regions }),

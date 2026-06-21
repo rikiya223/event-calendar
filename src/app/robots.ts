@@ -8,7 +8,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api/", "/mypage", "/login", "/reset"],
+      // クエリ付きURL（/calendar?date=...&ex=... など）は無限に組み合わせが増えるためクロール拒否。
+      // クリーンURL（/calendar, /events/[id]）だけを巡回させ、無駄な動的レンダリング＝転送量を抑える。
+      disallow: ["/admin", "/api/", "/mypage", "/login", "/reset", "/*?"],
     },
     sitemap: `${base}/sitemap.xml`,
   };

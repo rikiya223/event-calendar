@@ -2,19 +2,24 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toggleBookmark } from "./actions";
+import { toggleBookmark, getBookmarkState } from "./actions";
 
-export function BookmarkButton({
-  eventId,
-  initialBookmarked,
-}: {
-  eventId: string;
-  initialBookmarked: boolean;
-}) {
+export function BookmarkButton({ eventId }: { eventId: string }) {
   const router = useRouter();
-  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  // ページはISRキャッシュ（認証なし）なので、状態はマウント後にクライアントから取得する。
+  const [bookmarked, setBookmarked] = useState(false);
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getBookmarkState(eventId).then((b) => {
+      if (alive) setBookmarked(b);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [eventId]);
 
   useEffect(() => {
     if (!toast) return;

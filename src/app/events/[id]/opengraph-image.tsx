@@ -5,6 +5,12 @@ import { loadJpFont } from "@/lib/og";
 import { colorForKey } from "@/lib/categoryColors";
 
 export const runtime = "nodejs";
+// 一度生成したシェア画像はCDNにキャッシュ（クロール・SNS展開のたびに再生成しない）。
+export const revalidate = 604800;
+// ISR モードにするため（オンデマンド生成＋キャッシュ）
+export async function generateStaticParams() {
+  return [];
+}
 export const alt = "イベント詳細";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

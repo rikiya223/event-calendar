@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
+// sitemap は毎回DBを引かず1時間キャッシュ（クローラの再取得で都度生成しない＝転送・関数実行を削減）。
+export const revalidate = 3600;
 
 // 静的ページ＋公開中イベントの詳細ページを列挙する。
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

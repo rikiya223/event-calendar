@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { ReportReason } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -44,11 +43,21 @@ export async function toggleBookmark(eventId: string): Promise<ToggleResult> {
 
   if (existing) {
     await prisma.bookmark.delete({ where: { id: existing.id } });
-    revalidatePath(`/events/${eventId}`);
     return { ok: true, bookmarked: false };
   }
 
   await prisma.bookmark.create({ data: { userId: user.id, eventId } });
-  revalidatePath(`/events/${eventId}`);
   return { ok: true, bookmarked: true };
+}
+
+// 「気になる」状態の取得（クライアントから初期表示用に呼ぶ）。
+// これを使うことで詳細ページ自体は認証に依存せず＝ISRキャッシュ可能になる。
+export async function getBookmarkState(eventId: string): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  const existing = await prisma.bookmark.findUnique({
+    where: { userId_eventId: { userId: user.id, eventId } },
+    select: { id: true },
+  });
+  return existing !== null;
 }

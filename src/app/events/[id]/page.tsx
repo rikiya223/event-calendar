@@ -1,14 +1,20 @@
-﻿import Link from "next/link";
+﻿import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
 import { googleCalendarUrl } from "@/lib/googleCalendar";
-import { getCurrentUser } from "@/lib/supabase/server";
 import { BookmarkButton } from "./BookmarkButton";
+import { BackLink } from "./BackLink";
 import { ShareButton } from "./ShareButton";
 import { ReportButton } from "./ReportButton";
 
-export const dynamic = "force-dynamic";
+// 認証・searchParams に依存しないので ISR でキャッシュ（クロール・再訪での再生成＝転送を削減）。
+// generateStaticParams を置くことでこの動的ルートが ISR モードになる（[]＝ビルド時は事前生成
+// せず、初回アクセス時にオンデマンド生成してキャッシュ。dynamicParams 既定 true）。
+export const revalidate = 3600;
+export async function generateStaticParams() {
+  return [];
+}
 
 function formatJstFull(d: Date): string {
   return new Intl.DateTimeFormat("ja-JP", {
@@ -51,21 +57,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-function safeBack(from?: string): string {
-  if (from && from.startsWith("/") && !from.startsWith("//")) return from;
-  return "/calendar";
-}
-
 export default async function EventDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
-  const { from } = await searchParams;
-  const backHref = safeBack(from);
 
   const event = await prisma.event.findUnique({
     where: { id },
@@ -79,15 +76,6 @@ export default async function EventDetailPage({
   });
 
   if (!event) notFound();
-
-  // ログイン状態とブックマーク済みか
-  const user = await getCurrentUser();
-  const isBookmarked = user
-    ? (await prisma.bookmark.findUnique({
-        where: { userId_eventId: { userId: user.id, eventId: event.id } },
-        select: { id: true },
-      })) !== null
-    : false;
 
   // ヒーロー色：イベントのカテゴリから大分類の色を解決（子は親をたどる）
   const allCategories = await prisma.category.findMany({
@@ -135,9 +123,9 @@ export default async function EventDetailPage({
         style={{ background: `linear-gradient(160deg, ${heroColor}, ${heroColor}99)` }}
       >
         <div className="flex items-center justify-between">
-          <Link href={backHref} className="inline-flex items-center text-sm text-on-surface/70 hover:text-on-surface">
-            ← {backHref.startsWith("/calendar") ? "カレンダーに戻る" : "戻る"}
-          </Link>
+          <Suspense fallback={<span className="text-sm text-on-surface/70">← カレンダーに戻る</span>}>
+            <BackLink />
+          </Suspense>
           <ShareButton title={event.canonicalTitle} />
         </div>
         <h1 className="mt-4 text-2xl font-bold text-on-surface">{event.canonicalTitle}</h1>
@@ -270,7 +258,7 @@ export default async function EventDetailPage({
       <div className="fixed inset-x-0 bottom-16 z-30 border-t border-outline-variant/40 bg-white/95 backdrop-blur md:bottom-0">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-5 py-3">
           {/* 未ログイン時はクリックで /login へ誘導（BookmarkButton内で処理） */}
-          <BookmarkButton eventId={event.id} initialBookmarked={isBookmarked} />
+          <BookmarkButton eventId={event.id} />
           <a
             href={googleCalendarUrl({
               title: event.canonicalTitle,
