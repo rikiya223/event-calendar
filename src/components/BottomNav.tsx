@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
+import { useViewer } from "./useViewer";
 
 // スマホ専用の下部タブナビ（lg以上では非表示）。仕様 4.2 のタブナビ。
-export function BottomNav({ loggedIn }: { loggedIn: boolean }) {
+// ログイン状態はクライアントで取得（ページのキャッシュを妨げないため）。
+export function BottomNav() {
   const pathname = usePathname();
+  const loggedIn = !!useViewer()?.email;
 
   const items = [
     { href: "/calendar", label: "ホーム", icon: "home" },

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
-import { signOutAction } from "@/app/login/actions";
 import { NavLink } from "./NavLink";
+import { SidebarAuth, AdminNavLink } from "./SidebarAuth";
 import { Icon } from "./Icon";
 
-// PC用の左サイドバー（lg以上で表示）。
-export async function Sidebar({ email, admin }: { email?: string | null; admin: boolean }) {
+// PC用の左サイドバー（lg以上で表示）。ログイン依存の表示はクライアント側（SidebarAuth等）に分離し、
+// このサーバーコンポーネント自体は認証に依存しない＝ページのキャッシュを妨げない。
+export async function Sidebar() {
   // 全ての大分類を表示（空カテゴリも出す）
   const categories = await prisma.category.findMany({
     where: { parentId: null },
@@ -26,7 +27,7 @@ export async function Sidebar({ email, admin }: { email?: string | null; admin: 
         <NavLink href="/explore" icon="search" label="さがす" />
         <NavLink href="/submit" icon="add_circle" label="投稿する" />
         <NavLink href="/mypage" icon="person" label="マイページ" />
-        {admin && <NavLink href="/admin" icon="build" label="管理" />}
+        <AdminNavLink />
       </nav>
 
       <div className="mt-6">
@@ -49,26 +50,7 @@ export async function Sidebar({ email, admin }: { email?: string | null; admin: 
       </div>
 
       <div className="mt-auto border-t border-outline-variant/30 pt-3">
-        {email ? (
-          <div className="flex items-center gap-2.5 px-2">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary-container text-sm font-semibold text-secondary">
-              {email[0]?.toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-on-surface">{email}</p>
-              <form action={signOutAction}>
-                <button className="text-[11px] text-outline transition hover:text-error">ログアウト</button>
-              </form>
-            </div>
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="block rounded-full bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            ログイン
-          </Link>
-        )}
+        <SidebarAuth />
       </div>
     </aside>
   );

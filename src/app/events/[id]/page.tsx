@@ -8,12 +8,13 @@ import { BackLink } from "./BackLink";
 import { ShareButton } from "./ShareButton";
 import { ReportButton } from "./ReportButton";
 
-// ページ本体は認証・searchParams に依存しない作りにしたが、共通レイアウト（Header/Sidebar/
-// BottomNav）がログイン状態をサーバ側で描画するため、ここを静的キャッシュするとログイン中の
-// ユーザーにログアウト表示が焼き込まれてしまう。よってページHTMLは動的のままにする。
-// （重い部分のOGP画像は別ルートでレイアウト非依存のためキャッシュ済み。）
-// レイアウト認証をクライアント側に移せばこのページもキャッシュ可能（将来対応）。
-export const dynamic = "force-dynamic";
+// レイアウトの認証表示をクライアント側へ移したので、このページは認証・searchParams に依存せず
+// ISR でキャッシュ可能。クローラ・再訪はキャッシュHTMLが返り、関数実行・Origin転送が発生しない。
+// generateStaticParams([]) で動的ルートをISRモードにする（初回アクセス時に生成＋キャッシュ）。
+export const revalidate = 3600;
+export async function generateStaticParams() {
+  return [];
+}
 
 function formatJstFull(d: Date): string {
   return new Intl.DateTimeFormat("ja-JP", {

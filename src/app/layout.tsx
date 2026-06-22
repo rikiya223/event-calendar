@@ -6,8 +6,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { Fab } from "@/components/Fab";
 import { Footer } from "@/components/Footer";
-import { getCurrentUser } from "@/lib/supabase/server";
-import { isAdminEmail } from "@/lib/admin";
 import { SITE_NAME, SITE_DESCRIPTION, siteUrl } from "@/lib/site";
 
 const inter = Inter({
@@ -39,14 +37,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getCurrentUser();
-  const admin = isAdminEmail(user?.email);
-
   return (
     <html lang="ja" className={`${inter.variable} h-full antialiased`}>
       <head>
@@ -59,7 +54,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full">
         <div className="flex w-full">
-          <Sidebar email={user?.email} admin={admin} />
+          <Sidebar />
           <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-20 lg:pb-0">
             <Header />
             <div className="flex-1">{children}</div>
@@ -67,7 +62,7 @@ export default async function RootLayout({
           </div>
         </div>
         <Fab />
-        <BottomNav loggedIn={!!user} />
+        <BottomNav />
       </body>
     </html>
   );
