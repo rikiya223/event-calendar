@@ -94,6 +94,7 @@ export function CalendarBoard({
   // view / date / q / region の変更はこれまで通りナビゲーション（サーバ再取得）。
   const [ex, setEx] = useState<string[]>(initialEx);
   const [openId, setOpenId] = useState<string | null>(initialOpen);
+  const [catOpen, setCatOpen] = useState(false); // スマホでカテゴリ一覧を開いているか（PCは常時表示）
   const [savePending, startSave] = useTransition();
   const router = useRouter();
 
@@ -142,6 +143,8 @@ export function CalendarBoard({
   const allLeafIds = topCategories.flatMap((t) => t.childIds);
   const allExcluded = allLeafIds.length > 0 && allLeafIds.every((id) => exSet.has(id));
   const openTop = openId ? topCategories.find((t) => t.id === openId) ?? null : null;
+  // 非表示にしている大分類の数（スマホの「絞り込み」ボタンのバッジ用）
+  const hiddenTopCount = topCategories.filter((t) => topState(t) !== "on").length;
   const subCatsOf = (t: Top) =>
     t.childIds
       .map((id) => catById.get(id))
@@ -273,8 +276,28 @@ export function CalendarBoard({
         </div>
       </div>
 
-      {/* カテゴリ絞り込み（除外方式・チェックで表示/非表示。押すと即時反映＝サーバ往復なし）*/}
-      <div className="space-y-2">
+      {/* カテゴリ絞り込み（除外方式・チェックで表示/非表示。押すと即時反映＝サーバ往復なし）。
+          スマホは場所を取るので折りたたみ（「絞り込み」ボタンで開閉）。PCは常時表示。*/}
+      <div>
+        {/* スマホ用の開閉ボタン（PCでは非表示） */}
+        <button
+          type="button"
+          onClick={() => setCatOpen((o) => !o)}
+          aria-expanded={catOpen}
+          className="flex w-full items-center justify-between rounded-full bg-surface-variant/40 px-4 py-2 text-sm font-medium text-on-surface-variant transition hover:bg-surface-variant/60 lg:hidden"
+        >
+          <span className="flex items-center gap-1.5">
+            <Icon name="tune" className="text-[18px]" />
+            絞り込み
+            {hiddenTopCount > 0 && (
+              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">{hiddenTopCount}件 非表示</span>
+            )}
+          </span>
+          <Icon name={catOpen ? "expand_less" : "expand_more"} className="text-[20px]" />
+        </button>
+
+        {/* チップ群：スマホは開いたときだけ、PCは常時表示 */}
+        <div className={`space-y-2 ${catOpen ? "mt-2" : "hidden"} lg:mt-0 lg:block`}>
         <div className="flex flex-wrap gap-1.5 pb-1">
           {/* すべて表示 ⇄ すべて非表示（控えめなチップ）*/}
           <button
@@ -346,6 +369,7 @@ export function CalendarBoard({
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* 絞り込み中の一括解除（除外・地域・検索をすべてリセット）*/}
