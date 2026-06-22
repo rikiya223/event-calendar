@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
@@ -5,15 +6,22 @@ import { NavLink } from "./NavLink";
 import { SidebarAuth, AdminNavLink } from "./SidebarAuth";
 import { Icon } from "./Icon";
 
+// 大分類はめったに変わらないので1時間キャッシュ（毎リクエストでDBを引かない＝Supabase egress削減）。
+const getTopCategories = unstable_cache(
+  () =>
+    prisma.category.findMany({
+      where: { parentId: null },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, colorKey: true },
+    }),
+  ["sidebar-top-categories"],
+  { revalidate: 3600 },
+);
+
 // PC用の左サイドバー（lg以上で表示）。ログイン依存の表示はクライアント側（SidebarAuth等）に分離し、
 // このサーバーコンポーネント自体は認証に依存しない＝ページのキャッシュを妨げない。
 export async function Sidebar() {
-  // 全ての大分類を表示（空カテゴリも出す）
-  const categories = await prisma.category.findMany({
-    where: { parentId: null },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, colorKey: true },
-  });
+  const categories = await getTopCategories();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-outline-variant/30 bg-surface-container-low px-4 py-6 lg:flex">

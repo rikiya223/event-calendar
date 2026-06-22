@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { type CalView, type Ymd, buildRange, parseDateParam, todayJst, ymdKey, jstParts, jstMidnightUtc } from "@/lib/calendar";
 import { activeOccurrenceFilter } from "@/lib/eventStatus";
@@ -64,22 +65,11 @@ async function loadOccurrences(args: { start: Date; end: Date; q: string; region
 }
 type Occ = Awaited<ReturnType<typeof loadOccurrences>>[number];
 
-export default async function CalendarPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const sp = await searchParams;
-  const view = normView(sp.view);
-  const selected = parseDateParam(sp.date);
-  const anchor = view === "month" ? { ...selected, d: 1 } : selected;
-  const q = (sp.q ?? "").trim();
-  const regions = (sp.region ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const openId = (sp.open ?? "").trim() || null;
-  // URL に ex があれば明示指定（空 "ex=" は「全表示」の意思表示）。無ければ保存設定を既定に使う。
-  const exParamPresent = sp.ex !== undefined;
-  const exFromUrl = (sp.ex ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-
-  // ログインユーザーと、カテゴリ候補などを並列取得
-  const [user, [regionRows, allCategories, usedCatRows]] = await Promise.all([
-    getCurrentUser(),
-    Promise.all([
+// 地域候補・カテゴリ・使用中カテゴリはめったに変わらないので1時間キャッシュ。
+// これでカレンダーを開くたびにこれらのクエリでSupabaseを引かない（egress削減）。日付を含まず安全。
+const getCalendarMeta = unstable_cache(
+  async () => {
+    const [regionRows, allCategories, usedCatRows] = await Promise.all([
       prisma.venue.findMany({
         where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
         distinct: ["region"],
@@ -95,10 +85,34 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         select: { categoryId: true },
         distinct: ["categoryId"],
       }),
-    ]),
+    ]);
+    return {
+      availableRegions: regionRows.map((r) => r.region!).filter(Boolean),
+      allCategories,
+      usedCatIds: usedCatRows.map((r) => r.categoryId),
+    };
+  },
+  ["calendar-meta"],
+  { revalidate: 3600 },
+);
+
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const sp = await searchParams;
+  const view = normView(sp.view);
+  const selected = parseDateParam(sp.date);
+  const anchor = view === "month" ? { ...selected, d: 1 } : selected;
+  const q = (sp.q ?? "").trim();
+  const regions = (sp.region ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const openId = (sp.open ?? "").trim() || null;
+  // URL に ex があれば明示指定（空 "ex=" は「全表示」の意思表示）。無ければ保存設定を既定に使う。
+  const exParamPresent = sp.ex !== undefined;
+  const exFromUrl = (sp.ex ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+
+  // ログインユーザー（認証）とキャッシュ済みメタ情報を並列取得
+  const [user, { availableRegions, allCategories, usedCatIds }] = await Promise.all([
+    getCurrentUser(),
+    getCalendarMeta(),
   ]);
-  const availableRegions = regionRows.map((r) => r.region!).filter(Boolean);
-  const usedCatIds = usedCatRows.map((r) => r.categoryId);
 
   // ログイン中なら保存済みの絞り込みを取得。URL未指定のときの既定に使う。
   const savedPref = user
