@@ -9,8 +9,9 @@ export const metadata = { title: "カレンダー" };
 
 type SearchParams = { view?: string; date?: string; ex?: string; q?: string; region?: string; open?: string };
 
-function normView(v?: string): CalView {
-  return v === "week" || v === "day" ? v : "month";
+function normView(_v?: string): CalView {
+  // 週・日ビューは廃止。常に月ビューで表示する。
+  return "month";
 }
 function normalizeYmd(ymd: Ymd): Ymd {
   const p = jstParts(jstMidnightUtc(ymd.y, ymd.m, ymd.d));

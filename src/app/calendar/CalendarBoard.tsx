@@ -270,29 +270,12 @@ export function CalendarBoard({
               {rg}<Icon name="close" className="text-[14px]" />
             </Link>
           ))}
-          <div className="inline-flex rounded-full bg-surface-variant/40 p-1 text-sm">
-            {(["month", "week", "day"] as CalView[]).map((v) => {
-              const label = v === "month" ? "月" : v === "week" ? "週" : "日";
-              const isActive = v === view;
-              return (
-                <Link
-                  key={v}
-                  href={hrefFor({ view: v, date: selected, ex: exParam, q, region: regionParam, open: openId })}
-                  className={`rounded-full px-4 py-1.5 font-medium transition ${
-                    isActive ? "bg-white text-primary shadow-sm" : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
         </div>
       </div>
 
       {/* カテゴリ絞り込み（除外方式・チェックで表示/非表示。押すと即時反映＝サーバ往復なし）*/}
       <div className="space-y-2">
-        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-wrap gap-1.5 pb-1">
           {/* すべて表示 ⇄ すべて非表示（控えめなチップ）*/}
           <button
             type="button"
@@ -337,7 +320,7 @@ export function CalendarBoard({
         </div>
 
         {openTop && (
-          <div className="-mx-4 flex items-center gap-2 overflow-x-auto rounded-2xl bg-surface-variant/30 px-4 py-2.5 lg:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-surface-variant/30 px-4 py-2.5">
             <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-on-surface-variant">
               <Icon name="subdirectory_arrow_right" className="text-[16px]" />{openTop.name}
             </span>
