@@ -1,7 +1,10 @@
 ﻿import { Suspense } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { colorForKey } from "@/lib/categoryColors";
+import { jstParts } from "@/lib/calendar";
+import { activeOccurrenceFilter, dedupeByEvent, isOngoing } from "@/lib/eventStatus";
 import { googleCalendarUrl } from "@/lib/googleCalendar";
 import { BookmarkButton } from "./BookmarkButton";
 import { BackLink } from "./BackLink";
@@ -114,6 +117,26 @@ export default async function EventDetailPage({
       ? `${event.venue.lat},${event.venue.lng}`
       : event.venue.address || event.venue.name
     : null;
+
+  // 関連イベント：同じカテゴリ、または同じ会場の近日開催（このイベントは除く）。
+  // 詳細ページはISRキャッシュなので、このクエリは生成時に1回だけ走る（毎リクエストではない）。
+  const relatedCategoryIds = event.eventCategories.map((ec) => ec.categoryId);
+  const relatedConds = [
+    ...(relatedCategoryIds.length ? [{ eventCategories: { some: { categoryId: { in: relatedCategoryIds } } } }] : []),
+    ...(event.venueId ? [{ venueId: event.venueId }] : []),
+  ];
+  const relatedRaw = relatedConds.length
+    ? await prisma.eventOccurrence.findMany({
+        where: {
+          ...activeOccurrenceFilter(),
+          event: { status: "PUBLISHED", id: { not: event.id }, OR: relatedConds },
+        },
+        orderBy: { startsAt: "asc" },
+        take: 24,
+        include: { event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } } },
+      })
+    : [];
+  const related = dedupeByEvent(relatedRaw, 6);
 
   return (
     <main className="mx-auto w-full max-w-2xl pb-40 md:pb-28">
@@ -245,6 +268,43 @@ export default async function EventDetailPage({
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* 関連イベント（同じカテゴリ・会場の近日開催）*/}
+        {related.length > 0 && (
+          <section>
+            <h2 className="mb-2 text-sm font-semibold text-on-surface-variant">関連イベント</h2>
+            <div className="space-y-2">
+              {related.map((occ) => {
+                const cat = occ.event.eventCategories[0];
+                const color = colorForKey(cat ? resolveColorKey(cat.categoryId) : null);
+                const p = jstParts(occ.startsAt);
+                const ongoing = isOngoing(occ);
+                return (
+                  <Link
+                    key={occ.id}
+                    href={`/events/${occ.event.id}`}
+                    className="group flex items-center gap-3 rounded-xl border border-outline-variant/40 bg-white p-2.5 transition hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg" style={{ backgroundColor: `${color}26` }}>
+                      {ongoing ? (
+                        <span className="text-[10px] font-bold leading-tight text-slate-700">開催<br />中</span>
+                      ) : (
+                        <>
+                          <span className="text-base font-bold leading-none text-slate-800">{p.d}</span>
+                          <span className="mt-0.5 text-[9px] font-bold tracking-wide text-slate-500">{p.m + 1}月</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-on-surface transition-colors group-hover:text-primary">{occ.event.canonicalTitle}</p>
+                      {occ.event.venue && <p className="truncate text-xs text-on-surface-variant">{occ.event.venue.name}</p>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </section>
         )}
 
