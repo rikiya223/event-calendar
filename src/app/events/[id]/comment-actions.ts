@@ -12,9 +12,18 @@ function authorName(u: { displayName: string | null; email: string }): string {
   return u.displayName?.trim() || u.email.split("@")[0] || "ユーザー";
 }
 
+// 認証の取得にタイムアウトを付ける（Supabase制限中などで getUser が固まっても一覧表示は止めない）。
+async function viewerWithTimeout(ms = 3000) {
+  return Promise.race([
+    getCurrentUser().catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 // コメント一覧 ＋ 閲覧者が投稿/削除できるか。クライアントから呼ぶ（詳細ページはキャッシュ維持）。
+// 一覧は認証に依存しないので、認証取得が遅くても（or 失敗しても）コメントは表示する。
 export async function getComments(eventId: string) {
-  const user = await getCurrentUser().catch(() => null);
+  const userP = viewerWithTimeout();
   let rows: { id: string; body: string; createdAt: Date; userId: string; user: { displayName: string | null; email: string } }[] = [];
   try {
     rows = await prisma.comment.findMany({
@@ -26,6 +35,7 @@ export async function getComments(eventId: string) {
   } catch {
     rows = []; // テーブル未作成などでも詳細ページは壊さない
   }
+  const user = await userP;
   const admin = isAdminEmail(user?.email);
   return {
     canPost: !!user,
