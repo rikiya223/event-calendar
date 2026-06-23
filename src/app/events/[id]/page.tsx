@@ -10,6 +10,7 @@ import { BookmarkButton } from "./BookmarkButton";
 import { BackLink } from "./BackLink";
 import { ShareButton } from "./ShareButton";
 import { ReportButton } from "./ReportButton";
+import { Comments } from "./Comments";
 
 // レイアウトの認証表示をクライアント側へ移したので、このページは認証・searchParams に依存せず
 // ISR でキャッシュ可能。クローラ・再訪はキャッシュHTMLが返り、関数実行・Origin転送が発生しない。
@@ -307,6 +308,9 @@ export default async function EventDetailPage({
             </div>
           </section>
         )}
+
+        {/* コメント（ログイン必須・クライアント側で取得/投稿＝ページのキャッシュ維持）*/}
+        <Comments eventId={event.id} />
 
         {/* 情報の誤り報告 */}
         <section className="border-t border-outline-variant/30 pt-4">

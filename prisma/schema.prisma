@@ -57,6 +57,7 @@ model Event {
   eventPerformers EventPerformer[] // ⇔ 出演者（多対多）
   bookmarks       Bookmark[]
   reports         EventReport[] // 情報の誤り報告
+  comments        Comment[] // ユーザーのコメント
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -151,8 +152,25 @@ model User {
   bookmarks   Bookmark[]
   submissions EventSubmission[]
   calendarPref UserCalendarPref?
+  comments    Comment[]
 
   createdAt DateTime @default(now())
+}
+
+// イベント詳細ページのコメント（ログインユーザーのみ投稿可）。
+model Comment {
+  id      String @id @default(uuid()) @db.Uuid
+  eventId String @db.Uuid
+  userId  String @db.Uuid
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  body      String   @db.Text // 本文（最大500字をアプリ側で制限）
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([userId])
 }
 
 // ユーザーごとのカレンダー絞り込み設定（ログイン中は次回以降のデフォルトに使う）。
