@@ -46,7 +46,7 @@ export async function Sidebar() {
           {categories.map((c) => (
             <li key={c.id}>
               <Link
-                href={`/calendar?cat=${c.id}`}
+                href={`/explore?cat=${c.id}`}
                 className="flex items-center gap-3 rounded-xl px-4 py-2 text-sm text-on-surface-variant transition hover:bg-surface-variant/50"
               >
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorForKey(c.colorKey) }} />

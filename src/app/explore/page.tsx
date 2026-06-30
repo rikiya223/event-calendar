@@ -25,25 +25,27 @@ const CAT_ICON: Record<string, string> = {
 };
 const POPULAR_TAGS = ["ライブ", "美術展", "サッカー", "フェス", "映画公開日"];
 
-type SearchParams = { q?: string; region?: string };
+type SearchParams = { q?: string; region?: string; cat?: string };
 
 export default async function ExplorePage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { q: qRaw, region: regionRaw } = await searchParams;
+  const { q: qRaw, region: regionRaw, cat: catRaw } = await searchParams;
   const q = (qRaw ?? "").trim();
   const region = regionRaw ?? null;
+  const cat = (catRaw ?? "").trim() || null; // 選択中の大分類id
 
-  function exploreHref(opts: { q?: string | null; region?: string | null }) {
+  function exploreHref(opts: { q?: string | null; region?: string | null; cat?: string | null }) {
     const sp = new URLSearchParams();
     if (opts.q) sp.set("q", opts.q);
     if (opts.region) sp.set("region", opts.region);
+    if (opts.cat) sp.set("cat", opts.cat);
     const s = sp.toString();
     return s ? `/explore?${s}` : "/explore";
   }
-  const fromHref = exploreHref({ q, region });
+  const fromHref = exploreHref({ q, region, cat });
 
   const allCategories = await prisma.category.findMany({
     select: { id: true, name: true, colorKey: true, parentId: true },
@@ -56,6 +58,11 @@ export default async function ExplorePage({
     while (cur && !cur.colorKey && cur.parentId) cur = catById.get(cur.parentId);
     return colorForKey(cur?.colorKey);
   }
+  // 選択中の大分類（自身＋子のidを絞り込みに使う）
+  const activeCat = cat ? topCategories.find((c) => c.id === cat) ?? null : null;
+  const catScopeIds = activeCat
+    ? [activeCat.id, ...allCategories.filter((c) => c.parentId === activeCat.id).map((c) => c.id)]
+    : null;
 
   const regionRows = await prisma.venue.findMany({
     where: { region: { not: null }, events: { some: { status: "PUBLISHED" } } },
@@ -74,15 +81,16 @@ export default async function ExplorePage({
           status: "PUBLISHED",
           ...(q ? { canonicalTitle: { contains: q, mode: "insensitive" } } : {}),
           ...(region ? { venue: { region } } : {}),
+          ...(catScopeIds ? { eventCategories: { some: { categoryId: { in: catScopeIds } } } } : {}),
         },
       },
       orderBy: { startsAt: "asc" },
-      take: q ? 120 : 40,
+      take: q || cat ? 120 : 40,
       include: {
         event: { include: { venue: true, eventCategories: { select: { categoryId: true } } } },
       },
     }),
-    q ? 50 : 12,
+    q || cat ? 50 : 12,
   );
 
   return (
@@ -134,7 +142,7 @@ export default async function ExplorePage({
                   <Icon name="location_on" className="text-[16px]" />地域:
                 </span>
                 <Link
-                  href={exploreHref({ q })}
+                  href={exploreHref({ q, cat })}
                   className={`rounded-full border px-3 py-1 text-xs transition ${
                     !region ? "border-on-surface font-medium text-on-surface" : "border-outline-variant/40 bg-white text-on-surface-variant hover:bg-surface-variant/40"
                   }`}
@@ -144,7 +152,7 @@ export default async function ExplorePage({
                 {availableRegions.map((rg) => (
                   <Link
                     key={rg}
-                    href={exploreHref({ q, region: region === rg ? null : rg })}
+                    href={exploreHref({ q, cat, region: region === rg ? null : rg })}
                     className={`rounded-full border px-3 py-1 text-xs transition ${
                       region === rg ? "border-on-surface bg-surface-variant/60 font-medium text-on-surface" : "border-outline-variant/40 bg-white text-on-surface-variant hover:bg-surface-variant/40"
                     }`}
@@ -183,18 +191,23 @@ export default async function ExplorePage({
               <section className="space-y-4">
                 <div className="flex items-end justify-between">
                   <h2 className="text-xl font-bold text-on-surface">カテゴリーから探す</h2>
-                  <Link href="/calendar" className="text-sm font-semibold text-primary hover:underline">
-                    カレンダーへ
-                  </Link>
+                  {cat && (
+                    <Link href={exploreHref({ region })} className="text-sm font-semibold text-primary hover:underline">
+                      すべて表示
+                    </Link>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {topCategories.map((c) => {
                     const color = colorForKey(c.colorKey);
+                    const isActive = cat === c.id;
                     return (
                       <Link
                         key={c.id}
-                        href={`/calendar?cat=${c.id}`}
-                        className="group flex flex-col items-center justify-center rounded-2xl border border-outline-variant/30 bg-white p-5 transition hover:border-primary/40 hover:shadow-md"
+                        href={isActive ? exploreHref({ region }) : exploreHref({ cat: c.id, region })}
+                        className={`group flex flex-col items-center justify-center rounded-2xl border p-5 transition hover:shadow-md ${
+                          isActive ? "border-primary bg-primary/[0.04] shadow-sm" : "border-outline-variant/30 bg-white hover:border-primary/40"
+                        }`}
                       >
                         <span
                           className="mb-3 grid h-14 w-14 place-items-center rounded-full transition group-hover:scale-110"
@@ -202,19 +215,22 @@ export default async function ExplorePage({
                         >
                           <Icon name={CAT_ICON[c.name] ?? "category"} className="text-[26px]" />
                         </span>
-                        <span className="text-sm font-semibold text-on-surface">{c.name}</span>
+                        <span className={`text-sm font-semibold ${isActive ? "text-primary" : "text-on-surface"}`}>{c.name}</span>
                       </Link>
                     );
                   })}
                 </div>
               </section>
 
-              {/* 近日開催 */}
+              {/* 近日開催（カテゴリ選択中はそのカテゴリに絞る）*/}
               <section className="space-y-4">
-                <h2 className="text-xl font-bold text-on-surface">近日開催のイベント</h2>
+                <h2 className="text-xl font-bold text-on-surface">
+                  {activeCat ? `「${activeCat.name}」の近日開催` : "近日開催のイベント"}
+                  {activeCat && <span className="ml-2 text-sm font-normal text-outline">{upcoming.length}件</span>}
+                </h2>
                 {upcoming.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-outline-variant/40 bg-white px-3 py-12 text-center text-sm text-outline">
-                    予定されているイベントはまだありません。
+                    {activeCat ? "このカテゴリの開催予定はまだありません。" : "予定されているイベントはまだありません。"}
                   </p>
                 ) : (
                   <ul className="grid gap-2.5 sm:grid-cols-2">
