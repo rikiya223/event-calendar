@@ -78,7 +78,9 @@ export async function ingestWithAi(opts: {
   const today = new Date().toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" });
 
   const response = await client.messages.create({
-    model: process.env.AI_INGEST_MODEL || "claude-opus-4-8",
+    // 定期巡回でコストを抑えるため既定は Haiku。精度が足りなければ
+    // 環境変数 AI_INGEST_MODEL で Sonnet/Opus に上げられる。
+    model: process.env.AI_INGEST_MODEL || "claude-haiku-4-5-20251001",
     max_tokens: 16000,
     system:
       `あなたはイベント情報の抽出器です。与えられたWebページのテキストから、今後開催される実在のイベント（公演・展示・試合・発売日など）だけを抽出してください。` +

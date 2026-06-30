@@ -19,6 +19,14 @@
 | 祝日（内閣府） | 専用 | （holidaysルートが自動取得） | 季節行事/祝日 | 設定不要・自動公開 |
 | 映画.com 公開予定 | iCal | `https://eiga.com/movie/coming.ics` | 公開日 | 公式iCal。`includeDescription:false`（あらすじは著作物なので保存しない） |
 
+### AI抽出の定期巡回（`AI_SOURCES` in `feeds.ts`）
+公式の「一覧/スケジュール」ページを登録すると、cron が **曜日でソースを分散**（`i % 7 === JST曜日`、1日数本→1週間で一巡）して巡回し、Claude が本文からイベントを抽出 → **審査キュー(PENDING)** へ。自動公開はしない。`/admin` で承認すると公開。
+
+- **要 `ANTHROPIC_API_KEY`（Vercel env）**。未設定だと AI 巡回はスキップ。コスト抑制のため既定モデルは **Haiku 4.5**（`AI_INGEST_MODEL` で Sonnet/Opus に変更可）。
+- 手動テスト：`/api/ingest/ai?secret=<INGEST_SECRET>&url=<URL>&category=<カテゴリ名>`。または cron 全体を即時実行：`/api/ingest/cron?secret=...&ai=1`（分散を無視して全 AI ソースを叩く）。
+- **追加前に必ず**手動テストで「本文が取れる（0件でない）」ことを確認。JSで描画するSPAや 403 を返すサイト（例: サントリー美術館）は plain fetch で取れず0件になる。
+- 登録済み（いずれもSSRで取得確認済み・美術展）: 森美術館 / 国立新美術館 / 東京国立近代美術館 / 横浜美術館 / 大阪中之島美術館。
+
 ### 試したが**不採用**のフィード（再検証不要）
 | ソース | URL | 不採用の理由 |
 |---|---|---|

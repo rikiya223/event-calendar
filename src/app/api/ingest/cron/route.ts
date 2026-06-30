@@ -4,7 +4,8 @@ import { authorizedIngest } from "@/lib/ingest/secret";
 import { ingestHolidays } from "@/lib/ingest/holidays";
 import { ingestIcal } from "@/lib/ingest/ical";
 import { ingestRss } from "@/lib/ingest/rss";
-import { ICAL_FEEDS, RSS_FEEDS } from "@/lib/ingest/feeds";
+import { ingestWithAi } from "@/lib/ingest/ai";
+import { ICAL_FEEDS, RSS_FEEDS, AI_SOURCES } from "@/lib/ingest/feeds";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 複数フィード巡回のため長めに（Vercelの上限内）
@@ -58,6 +59,31 @@ async function handle(req: NextRequest) {
     }
   }
 
+  // AI抽出：全ソースを毎日叩くとコスト高＆maxDuration(60s)に当たるので、
+  // 曜日でソースを分散（i % 7 === 今日のJST曜日）し、1週間で一巡させる。
+  // ?ai=1 を付けると分散を無視して全ソースを即時実行（手動テスト用）。
+  const ai: unknown[] = [];
+  const forceAi = new URL(req.url).searchParams.get("ai") === "1";
+  if (process.env.ANTHROPIC_API_KEY && AI_SOURCES.length > 0) {
+    const jstWeekday = new Date(Date.now() + 9 * 3600 * 1000).getUTCDay(); // 0=日..6=土（JST）
+    const todays = forceAi ? AI_SOURCES : AI_SOURCES.filter((_, i) => i % 7 === jstWeekday);
+    for (const s of todays) {
+      try {
+        const cat = s.category
+          ? await prisma.category.findFirst({ where: { name: s.category } })
+          : null;
+        const result = await ingestWithAi({
+          url: s.url,
+          sourceName: s.name,
+          categoryIds: cat ? [cat.id] : [],
+        });
+        ai.push({ name: s.name, result });
+      } catch (e) {
+        ai.push({ name: s.name, error: String(e) });
+      }
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     ranAt: new Date().toISOString(),
@@ -66,6 +92,9 @@ async function handle(req: NextRequest) {
     ical,
     rssFeeds: RSS_FEEDS.length,
     rss,
+    aiSources: AI_SOURCES.length,
+    aiRan: ai.length,
+    ai,
   });
 }
 
