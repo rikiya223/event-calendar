@@ -130,6 +130,7 @@ model Idea {
 
   area        String? // 場所（自由記述。"山手線沿線" など可変な場所も許容）
   region      String? // 都道府県（絞り込み用）
+  address     String? // 住所（地図アプリに渡す用。area/regionと違い曖昧さのない実在の住所を想定）
   minPeople   Int? // 人数の目安（下限）
   maxPeople   Int? // 人数の目安（上限）
   mood        String? // 気分（"リフレッシュ" など）

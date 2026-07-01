@@ -19,10 +19,10 @@ const TEMPLATES: Record<Kind, { headers: string; sample: string }> = {
   },
   idea: {
     headers:
-      "title,description,area,region,minPeople,maxPeople,mood,weather,durationMin,belongings,category",
+      "title,description,area,region,address,minPeople,maxPeople,mood,weather,durationMin,belongings,category",
     sample:
-      "山手線を一周散歩,ぐるっと歩いて街を眺める,山手線沿線,東京都,1,2,リフレッシュ,晴れ,180,歩きやすい靴,散歩\n" +
-      "深夜のコンビニ食べ比べ,気になるものを何個か,,,,,わいわい,,60,,グルメ",
+      "山手線を一周散歩,ぐるっと歩いて街を眺める,山手線沿線,東京都,,1,2,リフレッシュ,晴れ,180,歩きやすい靴,散歩\n" +
+      "深夜のコンビニ食べ比べ,気になるものを何個か,,,,,,わいわい,,60,,グルメ",
   },
 };
 

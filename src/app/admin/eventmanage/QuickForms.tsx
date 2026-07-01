@@ -149,6 +149,14 @@ export function IdeaQuickForm({ categories }: { categories: Cat[] }) {
           <input name="region" className={input} />
         </div>
       </div>
+      <div>
+        <label className={label}>住所（任意・地図アプリに渡す用）</label>
+        <input
+          name="address"
+          placeholder="神奈川県鎌倉市由比ガ浜1-1-1"
+          className={input}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
           <label className={label}>人数(下限)</label>

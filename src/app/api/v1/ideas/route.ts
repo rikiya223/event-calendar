@@ -22,6 +22,7 @@ export async function GET() {
     imageUrl: i.imageUrl,
     area: i.area,
     region: i.region,
+    address: i.address,
     minPeople: i.minPeople,
     maxPeople: i.maxPeople,
     mood: i.mood,

@@ -8,6 +8,7 @@ export async function createIdeaFromPayload(p: {
   imageUrl?: string | null;
   area?: string | null;
   region?: string | null;
+  address?: string | null;
   minPeople?: number | null;
   maxPeople?: number | null;
   mood?: string | null;
@@ -24,6 +25,7 @@ export async function createIdeaFromPayload(p: {
       imageUrl: p.imageUrl || null,
       area: p.area || null,
       region: p.region || null,
+      address: p.address || null,
       minPeople: p.minPeople ?? null,
       maxPeople: p.maxPeople ?? null,
       mood: p.mood || null,
