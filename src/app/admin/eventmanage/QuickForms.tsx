@@ -6,6 +6,7 @@ import {
   createIdeaManual,
   type FormState,
 } from "./actions";
+import { WEATHER_OPTIONS, MOOD_OPTIONS } from "@/lib/ideaOptions";
 
 export type Cat = { id: string; name: string; parentId: string | null };
 
@@ -190,12 +191,26 @@ export function IdeaQuickForm({ categories }: { categories: Cat[] }) {
         </div>
         <div>
           <label className={label}>天気</label>
-          <input name="weather" placeholder="晴れ" className={input} />
+          <select name="weather" defaultValue="" className={input}>
+            <option value="">未設定</option>
+            {WEATHER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <div>
         <label className={label}>気分</label>
-        <input name="mood" placeholder="リフレッシュ" className={input} />
+        <select name="mood" defaultValue="" className={input}>
+          <option value="">未設定</option>
+          {MOOD_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className={label}>持ち物（任意）</label>

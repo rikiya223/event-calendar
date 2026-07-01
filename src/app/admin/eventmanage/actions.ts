@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { parseCsv } from "@/lib/csv";
 import { createEventFromPayload } from "@/lib/events";
 import { createIdeaFromPayload } from "@/lib/ideas";
+import { weatherFromLabel, moodFromLabel } from "@/lib/ideaOptions";
+import type { Weather, Mood } from "@prisma/client";
 import {
   getAdminAccessKey,
   isAdminUnlocked,
@@ -164,8 +166,8 @@ export async function importIdeasFromCsv(
         address: r.address ?? null,
         minPeople: parseIntOrNull(r.minPeople ?? ""),
         maxPeople: parseIntOrNull(r.maxPeople ?? ""),
-        mood: r.mood ?? null,
-        weather: r.weather ?? null,
+        mood: r.mood ? moodFromLabel(r.mood) : null,
+        weather: r.weather ? weatherFromLabel(r.weather) : null,
         durationMin: parseIntOrNull(r.durationMin ?? ""),
         belongings: r.belongings ?? null,
         categoryIds: await resolveCategoryIds(r.category ?? "", nameToId),
@@ -253,8 +255,8 @@ export async function createIdeaManual(
       address: String(formData.get("address") ?? "") || null,
       minPeople: num("minPeople"),
       maxPeople: num("maxPeople"),
-      mood: String(formData.get("mood") ?? "") || null,
-      weather: String(formData.get("weather") ?? "") || null,
+      mood: (String(formData.get("mood") ?? "") || null) as Mood | null,
+      weather: (String(formData.get("weather") ?? "") || null) as Weather | null,
       durationMin: num("durationMin"),
       belongings: String(formData.get("belongings") ?? "") || null,
       categoryIds: categoryIdsFrom(formData),

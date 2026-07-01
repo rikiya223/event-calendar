@@ -1,4 +1,4 @@
-import type { EventStatus } from "@prisma/client";
+import type { EventStatus, Mood, Weather } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // 遊びアイデア(Idea)を1件作成する。管理画面・CSV一括投入から使う。
@@ -11,8 +11,8 @@ export async function createIdeaFromPayload(p: {
   address?: string | null;
   minPeople?: number | null;
   maxPeople?: number | null;
-  mood?: string | null;
-  weather?: string | null;
+  mood?: Mood | null;
+  weather?: Weather | null;
   durationMin?: number | null;
   belongings?: string | null;
   categoryIds: string[];
@@ -28,8 +28,8 @@ export async function createIdeaFromPayload(p: {
       address: p.address || null,
       minPeople: p.minPeople ?? null,
       maxPeople: p.maxPeople ?? null,
-      mood: p.mood || null,
-      weather: p.weather || null,
+      mood: p.mood ?? null,
+      weather: p.weather ?? null,
       durationMin: p.durationMin ?? null,
       belongings: p.belongings || null,
       status: p.status,

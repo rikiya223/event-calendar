@@ -39,6 +39,23 @@ enum SubmissionStatus {
   REJECTED // 却下
 }
 
+// Idea（遊びアイデア）の天気・気分。選択式にするため固定の列挙型にする。
+enum Weather {
+  SUNNY // 晴れ
+  CLOUDY // くもり
+  RAINY // 雨
+  SNOWY // 雪
+}
+
+enum Mood {
+  REFRESH // リフレッシュ
+  CALM // 落ち着き
+  EXCITED // わくわく
+  LIVELY // わいわい
+  RELAXED // のんびり
+  FOCUS // 集中
+}
+
 // ── イベント（統合済みの正規レコード）─────────────────────
 
 model Event {
@@ -133,8 +150,8 @@ model Idea {
   address     String? // 住所（地図アプリに渡す用。area/regionと違い曖昧さのない実在の住所を想定）
   minPeople   Int? // 人数の目安（下限）
   maxPeople   Int? // 人数の目安（上限）
-  mood        String? // 気分（"リフレッシュ" など）
-  weather     String? // 天気（"晴れ" など）
+  mood        Mood? // 気分（選択式）
+  weather     Weather? // 天気（選択式）
   durationMin Int? // 所要時間の目安（分）
   belongings  String? // 持ち物（自由記述。"本、飲み物、レジャーシート" など）
 
