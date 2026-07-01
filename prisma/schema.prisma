@@ -168,6 +168,10 @@ model Idea {
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  // 一覧・件数APIの絞り込みで実際に使う組み合わせ。COUNT()が索引を使えるようにする。
+  @@index([status, region])
+  @@index([status, weather])
+  @@index([status, mood])
 }
 
 model IdeaCategory {
