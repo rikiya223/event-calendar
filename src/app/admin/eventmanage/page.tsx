@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { isAdminUnlocked } from "@/lib/adminAccess";
 import { BulkImport } from "./BulkImport";
+import { UnlockForm } from "./UnlockForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "イベント・アイデア管理" };
 
 export default async function EventManagePage() {
-  await requireAdmin();
+  // ログイン(ADMIN_EMAILS) か 合言葉(ADMIN_ACCESS_KEY) のどちらかで解錠。
+  if (!(await isAdminUnlocked())) {
+    return <UnlockForm />;
+  }
 
   const [eventCount, ideaCount, pendingEvents, pendingIdeas, categories] =
     await Promise.all([

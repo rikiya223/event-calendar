@@ -2,16 +2,43 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
 import { parseCsv } from "@/lib/csv";
 import { createEventFromPayload } from "@/lib/events";
 import { createIdeaFromPayload } from "@/lib/ideas";
+import {
+  getAdminAccessKey,
+  isAdminUnlocked,
+  setAccessCookie,
+} from "@/lib/adminAccess";
 
 export type ImportResult = {
   ok: boolean;
   created: number;
   failed: number;
   errors: string[]; // 「3行目: タイトルが空です」等
+};
+
+export type UnlockState = { error?: string };
+
+// 合言葉で解錠する（Supabaseログイン不要）。一致すれば cookie を発行。
+export async function unlockAdmin(
+  _prev: UnlockState,
+  formData: FormData,
+): Promise<UnlockState> {
+  const key = String(formData.get("key") ?? "").trim();
+  const expected = getAdminAccessKey();
+  if (!expected) return { error: "サーバーに ADMIN_ACCESS_KEY が未設定です" };
+  if (key !== expected) return { error: "合言葉が違います" };
+  await setAccessCookie(key);
+  revalidatePath("/admin/eventmanage");
+  return {};
+}
+
+const DENIED: ImportResult = {
+  ok: false,
+  created: 0,
+  failed: 0,
+  errors: ["アクセス権がありません（合言葉で解錠してください）"],
 };
 
 // "YYYY-MM-DD" または "YYYY-MM-DD HH:mm"(JST) を UTC Date に。不正なら null。
@@ -54,7 +81,7 @@ export async function importEventsFromCsv(
   csvText: string,
   publish: boolean,
 ): Promise<ImportResult> {
-  await requireAdmin();
+  if (!(await isAdminUnlocked())) return DENIED;
   const { rows } = parseCsv(csvText);
   const errors: string[] = [];
   let created = 0;
@@ -109,7 +136,7 @@ export async function importIdeasFromCsv(
   csvText: string,
   publish: boolean,
 ): Promise<ImportResult> {
-  await requireAdmin();
+  if (!(await isAdminUnlocked())) return DENIED;
   const { rows } = parseCsv(csvText);
   const errors: string[] = [];
   let created = 0;
