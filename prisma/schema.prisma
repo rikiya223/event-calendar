@@ -45,6 +45,7 @@ model Event {
   id              String      @id @default(uuid()) @db.Uuid
   canonicalTitle  String // 正規版タイトル
   description     String?     @db.Text // 説明文（将来はAI要約・リライト後）
+  imageUrl        String? // 画像（Supabase Storage の公開URL。任意）
   confidenceScore Int         @default(0) // 信頼度スコア（自動公開／審査の判定に使用）
   status          EventStatus @default(PENDING_REVIEW)
 
@@ -113,8 +114,47 @@ model Category {
   icon     String?
 
   eventCategories EventCategory[]
+  ideaCategories  IdeaCategory[] // ⇔ 遊びアイデア（Event とカテゴリを共用）
 
   @@index([parentId])
+}
+
+// ── 遊びアイデア（日付に紐づかない ANALOGS のコンテンツ）─────────
+// 「山手線を散歩する」等、いつでもできる遊び。日時を持たない点が Event との違い。
+// 画像・場所・気分などは ANALOGS のフィルター(モック07)に対応。すべて任意。
+model Idea {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  description String? @db.Text
+  imageUrl    String? // 画像（Supabase Storage の公開URL）
+
+  area        String? // 場所（自由記述。"山手線沿線" など可変な場所も許容）
+  region      String? // 都道府県（絞り込み用）
+  minPeople   Int? // 人数の目安（下限）
+  maxPeople   Int? // 人数の目安（上限）
+  mood        String? // 気分（"リフレッシュ" など）
+  weather     String? // 天気（"晴れ" など）
+  durationMin Int? // 所要時間の目安（分）
+
+  status EventStatus @default(PENDING_REVIEW) // 公開/審査待ち/却下（Eventと共用）
+
+  ideaCategories IdeaCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model IdeaCategory {
+  ideaId     String @db.Uuid
+  categoryId String @db.Uuid
+
+  idea     Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([ideaId, categoryId])
+  @@index([categoryId])
 }
 
 // ── 会場 ───────────────────────────────────────────────
