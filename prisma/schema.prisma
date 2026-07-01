@@ -155,6 +155,11 @@ model Idea {
   durationMin Int? // 所要時間の目安（分）
   belongings  String? // 持ち物（自由記述。"本、飲み物、レジャーシート" など）
 
+  // 一覧カード表示用の集計値。今はどちらも実際の保存機能がまだ無いため常に0。
+  // お気に入り・コメント機能を実装する際にここをインクリメントする形にする。
+  favoriteCount Int @default(0)
+  commentCount  Int @default(0)
+
   status EventStatus @default(PENDING_REVIEW) // 公開/審査待ち/却下（Eventと共用）
 
   ideaCategories IdeaCategory[]
