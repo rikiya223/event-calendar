@@ -13,6 +13,7 @@ export async function createIdeaFromPayload(p: {
   mood?: string | null;
   weather?: string | null;
   durationMin?: number | null;
+  belongings?: string | null;
   categoryIds: string[];
   status: EventStatus;
 }) {
@@ -28,6 +29,7 @@ export async function createIdeaFromPayload(p: {
       mood: p.mood || null,
       weather: p.weather || null,
       durationMin: p.durationMin ?? null,
+      belongings: p.belongings || null,
       status: p.status,
       ideaCategories: p.categoryIds.length
         ? { create: p.categoryIds.map((categoryId) => ({ categoryId })) }

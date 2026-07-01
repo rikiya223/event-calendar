@@ -131,7 +131,7 @@ export async function importEventsFromCsv(
 }
 
 // ── アイデアのCSV一括投入 ──────────────────────────────────
-// 列: title(必須), description, area, region, minPeople, maxPeople, mood, weather, durationMin, category
+// 列: title(必須), description, area, region, minPeople, maxPeople, mood, weather, durationMin, belongings, category
 export async function importIdeasFromCsv(
   csvText: string,
   publish: boolean,
@@ -166,6 +166,7 @@ export async function importIdeasFromCsv(
         mood: r.mood ?? null,
         weather: r.weather ?? null,
         durationMin: parseIntOrNull(r.durationMin ?? ""),
+        belongings: r.belongings ?? null,
         categoryIds: await resolveCategoryIds(r.category ?? "", nameToId),
         status,
       });
@@ -253,6 +254,7 @@ export async function createIdeaManual(
       mood: String(formData.get("mood") ?? "") || null,
       weather: String(formData.get("weather") ?? "") || null,
       durationMin: num("durationMin"),
+      belongings: String(formData.get("belongings") ?? "") || null,
       categoryIds: categoryIdsFrom(formData),
       status: publish ? "PUBLISHED" : "PENDING_REVIEW",
     });

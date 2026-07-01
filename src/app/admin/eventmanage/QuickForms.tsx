@@ -189,6 +189,14 @@ export function IdeaQuickForm({ categories }: { categories: Cat[] }) {
         <label className={label}>気分</label>
         <input name="mood" placeholder="リフレッシュ" className={input} />
       </div>
+      <div>
+        <label className={label}>持ち物（任意）</label>
+        <input
+          name="belongings"
+          placeholder="本、飲み物、レジャーシート"
+          className={input}
+        />
+      </div>
       <CategoryPicker categories={categories} />
       <PublishAndSubmit pending={pending} />
       <Result state={state} />

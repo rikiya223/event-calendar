@@ -135,6 +135,7 @@ model Idea {
   mood        String? // 気分（"リフレッシュ" など）
   weather     String? // 天気（"晴れ" など）
   durationMin Int? // 所要時間の目安（分）
+  belongings  String? // 持ち物（自由記述。"本、飲み物、レジャーシート" など）
 
   status EventStatus @default(PENDING_REVIEW) // 公開/審査待ち/却下（Eventと共用）
 
