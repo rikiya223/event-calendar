@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { isAdminUnlocked } from "@/lib/adminAccess";
 import { BulkImport } from "./BulkImport";
 import { UnlockForm } from "./UnlockForm";
+import { EventQuickForm, IdeaQuickForm } from "./QuickForms";
+import { CategoryManager } from "./CategoryManager";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "イベント・アイデア管理" };
@@ -21,14 +23,16 @@ export default async function EventManagePage() {
       prisma.idea.count({ where: { status: "PENDING_REVIEW" } }),
       prisma.category.findMany({
         orderBy: { name: "asc" },
-        select: { name: true },
+        select: { id: true, name: true, parentId: true },
       }),
     ]);
 
+  const topCategories = categories.filter((c) => c.parentId === null);
+
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8">
-      <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold text-slate-800">
+    <main className="mx-auto w-full max-w-4xl px-3 py-6 sm:px-4 sm:py-8">
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-xl font-bold text-slate-800 sm:text-2xl">
           イベント・アイデア管理
         </h1>
         <Link href="/admin" className="text-sm text-primary hover:underline">
@@ -43,43 +47,51 @@ export default async function EventManagePage() {
         <Stat label="うち審査待ち" value={pendingIdeas} accent />
       </div>
 
+      {/* イベント */}
       <section className="mb-10">
         <h2 className="mb-1 text-lg font-semibold text-slate-800">
-          イベントをCSVで一括投稿
+          イベントを投稿
         </h2>
         <p className="mb-3 text-sm text-slate-500">
-          日時が決まっている催し（祭り・展示・ライブなど）。日時は JST。
+          日時が決まっている催し（祭り・展示・ライブなど）。
         </p>
-        <BulkImport kind="event" />
+        <EventQuickForm categories={categories} />
+        <details className="mt-3">
+          <summary className="cursor-pointer rounded-lg py-2 text-sm font-medium text-primary">
+            CSVで一括投稿する
+          </summary>
+          <div className="mt-3">
+            <BulkImport kind="event" />
+          </div>
+        </details>
       </section>
 
+      {/* アイデア */}
       <section className="mb-10">
         <h2 className="mb-1 text-lg font-semibold text-slate-800">
-          遊びアイデアをCSVで一括投稿
+          遊びアイデアを投稿
         </h2>
         <p className="mb-3 text-sm text-slate-500">
           日付に縛られない遊び（例: 山手線を一周散歩する）。
         </p>
-        <BulkImport kind="idea" />
+        <IdeaQuickForm categories={categories} />
+        <details className="mt-3">
+          <summary className="cursor-pointer rounded-lg py-2 text-sm font-medium text-primary">
+            CSVで一括投稿する
+          </summary>
+          <div className="mt-3">
+            <BulkImport kind="idea" />
+          </div>
+        </details>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">
-          カテゴリ名（CSVの category 列にこの名前を入れてください）
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {categories.map((c) => (
-            <span
-              key={c.name}
-              className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600"
-            >
-              {c.name}
-            </span>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-slate-400">
-          複数付けるときは「祭り|グルメ」のように「|」で区切ります。未知の名前は無視されます。
+      {/* カテゴリ管理 */}
+      <section className="mb-6">
+        <h2 className="mb-1 text-lg font-semibold text-slate-800">カテゴリ</h2>
+        <p className="mb-3 text-sm text-slate-500">
+          新しいカテゴリを追加できます（投稿フォーム・CSVの両方に反映）。
         </p>
+        <CategoryManager categories={categories} topCategories={topCategories} />
       </section>
 
       <p className="mt-6 text-xs text-slate-400">

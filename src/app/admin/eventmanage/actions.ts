@@ -178,3 +178,124 @@ export async function importIdeasFromCsv(
   revalidatePath("/admin/eventmanage");
   return { ok: created > 0, created, failed: rows.length - created, errors };
 }
+
+// ── 1件ずつ投稿するフォーム用 ─────────────────────────────
+export type FormState = { ok?: boolean; message?: string; error?: string };
+
+function categoryIdsFrom(formData: FormData): string[] {
+  return formData.getAll("categoryIds").map(String).filter(Boolean);
+}
+
+// イベントを1件登録する。
+export async function createEventManual(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  if (!(await isAdminUnlocked())) return { error: "アクセス権がありません" };
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return { error: "タイトルを入力してください" };
+
+  const startsAt = parseJstDate(String(formData.get("startsAt") ?? ""));
+  if (!startsAt) return { error: "日時が不正です" };
+
+  const endsRaw = String(formData.get("endsAt") ?? "").trim();
+  const endsAt = endsRaw ? parseJstDate(endsRaw) : null;
+  const publish = formData.get("publish") === "on";
+
+  try {
+    await createEventFromPayload({
+      title,
+      description: String(formData.get("description") ?? "") || null,
+      occurrences: [{ startsAt, endsAt: endsAt ?? null }],
+      venueName: String(formData.get("venueName") ?? "") || null,
+      venueRegion: String(formData.get("region") ?? "") || null,
+      categoryIds: categoryIdsFrom(formData),
+      status: publish ? "PUBLISHED" : "PENDING_REVIEW",
+      sourceType: "MANUAL",
+      trustWeight: 80,
+      confidenceScore: 80,
+    });
+  } catch (e) {
+    return { error: `登録に失敗しました（${(e as Error).message}）` };
+  }
+
+  revalidatePath("/admin/eventmanage");
+  return { ok: true, message: `「${title}」を${publish ? "公開" : "審査待ちで登録"}しました` };
+}
+
+// 遊びアイデアを1件登録する。
+export async function createIdeaManual(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  if (!(await isAdminUnlocked())) return { error: "アクセス権がありません" };
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return { error: "タイトルを入力してください" };
+  const publish = formData.get("publish") === "on";
+
+  const num = (k: string) => {
+    const v = String(formData.get(k) ?? "").trim();
+    if (!v) return null;
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  try {
+    await createIdeaFromPayload({
+      title,
+      description: String(formData.get("description") ?? "") || null,
+      area: String(formData.get("area") ?? "") || null,
+      region: String(formData.get("region") ?? "") || null,
+      minPeople: num("minPeople"),
+      maxPeople: num("maxPeople"),
+      mood: String(formData.get("mood") ?? "") || null,
+      weather: String(formData.get("weather") ?? "") || null,
+      durationMin: num("durationMin"),
+      categoryIds: categoryIdsFrom(formData),
+      status: publish ? "PUBLISHED" : "PENDING_REVIEW",
+    });
+  } catch (e) {
+    return { error: `登録に失敗しました（${(e as Error).message}）` };
+  }
+
+  revalidatePath("/admin/eventmanage");
+  return { ok: true, message: `「${title}」を${publish ? "公開" : "審査待ちで登録"}しました` };
+}
+
+// カテゴリを追加する（任意で親カテゴリ・色キーを指定）。
+export async function createCategory(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  if (!(await isAdminUnlocked())) return { error: "アクセス権がありません" };
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "カテゴリ名を入力してください" };
+
+  const parentId = String(formData.get("parentId") ?? "").trim() || null;
+  const colorKey = String(formData.get("colorKey") ?? "").trim() || null;
+
+  const existing = await prisma.category.findFirst({
+    where: { name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (existing) return { error: `「${name}」は既に存在します` };
+
+  try {
+    await prisma.category.create({
+      data: {
+        name,
+        parentId,
+        // 色キーは大分類（親なし）のみ持たせる
+        colorKey: parentId ? null : colorKey,
+      },
+    });
+  } catch (e) {
+    return { error: `追加に失敗しました（${(e as Error).message}）` };
+  }
+
+  revalidatePath("/admin/eventmanage");
+  return { ok: true, message: `カテゴリ「${name}」を追加しました` };
+}

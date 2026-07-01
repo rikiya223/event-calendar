@@ -42,6 +42,13 @@ export function BulkImport({ kind }: { kind: Kind }) {
 
   const loadSample = () => setText(`${tpl.headers}\n${tpl.sample}`);
 
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setText(await file.text());
+    e.target.value = ""; // 同じファイルを選び直せるようにリセット
+  };
+
   const submit = () => {
     setResult(null);
     startTransition(async () => {
@@ -54,25 +61,40 @@ export function BulkImport({ kind }: { kind: Kind }) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-700">
-          1行目はヘッダ。列: <code className="text-xs">{tpl.headers}</code>
-        </p>
+      <p className="mb-2 text-sm font-medium text-slate-700">
+        1行目はヘッダ。列:{" "}
+        <code className="block break-all text-xs sm:inline">{tpl.headers}</code>
+      </p>
+
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+        <label className="flex-1 cursor-pointer rounded-lg border border-primary px-4 py-2.5 text-center text-sm font-medium text-primary">
+          CSVファイルを選択
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={onFile}
+            className="hidden"
+          />
+        </label>
         <button
           type="button"
           onClick={loadSample}
-          className="text-xs text-primary hover:underline"
+          className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-600"
         >
           サンプルを挿入
         </button>
       </div>
+
+      <p className="mb-2 text-xs text-slate-400">
+        ファイルを選ぶと下に読み込まれます。貼り付けでも直接編集でもOK。
+      </p>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={8}
         placeholder={`${tpl.headers}\n...`}
-        className="w-full rounded-lg border border-slate-300 p-2 font-mono text-xs"
+        className="w-full rounded-lg border border-slate-300 p-2 font-mono text-sm"
       />
 
       {preview && (
@@ -113,12 +135,13 @@ export function BulkImport({ kind }: { kind: Kind }) {
         </div>
       )}
 
-      <div className="mt-3 flex items-center gap-4">
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={publish}
             onChange={(e) => setPublish(e.target.checked)}
+            className="h-5 w-5"
           />
           すぐ公開する（オフ = 審査待ちの下書き）
         </label>
@@ -126,7 +149,7 @@ export function BulkImport({ kind }: { kind: Kind }) {
           type="button"
           onClick={submit}
           disabled={pending || !text.trim()}
-          className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-primary px-4 py-3 text-base font-medium text-white disabled:opacity-50 sm:ml-auto sm:py-2 sm:text-sm"
         >
           {pending ? "登録中…" : "一括登録"}
         </button>
